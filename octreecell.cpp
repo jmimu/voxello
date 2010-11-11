@@ -7,7 +7,7 @@
 
 long OctreeCell::nbr_vox=0;
 
-OctreeCell::OctreeCell(OctreeCell * parent,long x_min,long y_min,long z_min,long size) :
+OctreeCell::OctreeCell(OctreeCell * parent,unsigned short x_min,unsigned short y_min,unsigned short z_min,unsigned short size) :
         m_parent(parent),
         m_flags(0x0),
         m_x_min(x_min),m_y_min(y_min),m_z_min(z_min),m_size(size),
@@ -40,17 +40,18 @@ OctreeCell::~OctreeCell()///affects neigh
         }
 }
 
-void OctreeCell::ogl_render(double m_pos_X,double m_pos_Y,double m_pos_Z,long x_total_size,long y_total_size,long z_total_size)///render via OpenGL
+
+void OctreeCell::ogl_render(double m_pos_X,double m_pos_Y,double m_pos_Z,unsigned short x_half_size,unsigned short y_half_size,unsigned short z_half_size)///render via OpenGL
 {
     if (m_sons[0])
         for (unsigned int i=0;i<8;i++)
         {
-            m_sons[i]->ogl_render(m_pos_X, m_pos_Y, m_pos_Z, x_total_size, y_total_size, z_total_size);
+            m_sons[i]->ogl_render(m_pos_X, m_pos_Y, m_pos_Z, x_half_size, y_half_size, z_half_size);
         }
     else
         if (m_col_a!=0)
-            ogldraw::cube(m_x_min-(x_total_size>>1)+m_pos_X,m_y_min-(y_total_size>>1)+m_pos_Y,
-                          m_z_min-(z_total_size>>1)+m_pos_Z,m_size,m_col_r,m_col_g,m_col_b,m_col_a);
+            ogldraw::cube(m_x_min-x_half_size+m_pos_X,m_y_min-y_half_size+m_pos_Y,
+                          m_z_min-z_half_size+m_pos_Z,m_size,m_col_r,m_col_g,m_col_b,m_col_a);
 }
 
 bool OctreeCell::create_sons()
@@ -62,10 +63,10 @@ bool OctreeCell::create_sons()
         /2 3/
        /0 1/
        */
-    long new_size=m_size/2;
-    long x_mid=m_x_min+new_size;
-    long y_mid=m_y_min+new_size;
-    long z_mid=m_z_min+new_size;
+    unsigned short new_size=m_size/2;
+    unsigned short x_mid=m_x_min+new_size;
+    unsigned short y_mid=m_y_min+new_size;
+    unsigned short z_mid=m_z_min+new_size;
 
     m_sons[0]=new OctreeCell(this,m_x_min,m_y_min,m_z_min,new_size);
     m_sons[1]=new OctreeCell(this,x_mid,m_y_min,m_z_min,new_size);
@@ -103,6 +104,24 @@ long OctreeCell::count_rendering_cells()
     }
 }
 
+
+long OctreeCell::count_terminal_cells()
+{
+    long n=0;
+    if (m_sons[0])
+    {
+        for (unsigned int i=0;i<8;i++)
+        {
+            n+=m_sons[i]->count_terminal_cells();
+        }
+        return n;
+    }
+    else
+    {
+        return 1;
+    }
+}
+
 void OctreeCell::set_color(unsigned short col_r,unsigned short col_g,unsigned short col_b,unsigned short col_a)
 {
     m_col_r=col_r;
@@ -119,7 +138,7 @@ void OctreeCell::set_color(unsigned short col_r,unsigned short col_g,unsigned sh
 }
 
 //
-bool OctreeCell::add_voxel(long x,long y,long z,unsigned short r,unsigned short g,unsigned short b,unsigned short a)
+bool OctreeCell::add_voxel(unsigned short x,unsigned short y,unsigned short z,unsigned short r,unsigned short g,unsigned short b,unsigned short a)
 {
     if ((x<m_x_min)||(x>m_x_min+m_size)||(y<m_y_min)||(y>m_y_min+m_size)||(z<m_z_min)||(z>m_z_min+m_size)||(m_size==0))
     {

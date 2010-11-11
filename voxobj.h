@@ -24,9 +24,9 @@ public:
     VoxObj();
     ~VoxObj();
     //load form voxlap file
-    //long load_from_KV6 (char *filnam);///load Ken Silverman's Voxlap5 KV6 format
-    long load_from_VOX (char *filnam);///load Ken Silverman's Voxlap5 KV6 format
-    long load_from_VOX_octree (char *filnam);///load Ken Silverman's Voxlap5 KV6 format
+    //bool load_from_KV6 (char *filnam);///load Ken Silverman's Voxlap5 KV6 format
+    bool load_from_VOX (char *filnam);///load Ken Silverman's Voxlap5 KV6 format
+    bool load_from_VOX_octree (char *filnam);///load Ken Silverman's Voxlap5 KV6 format
 
     //temp:
     unsigned char *voxels;
@@ -36,7 +36,7 @@ public:
 
 protected:
     double m_pos_X,m_pos_Y,m_pos_Z;
-    long xsiz, ysiz, zsiz;
+    unsigned short xsiz, ysiz, zsiz;
     //rotation, translation
     //size
     OctreeCell *m_octree;///octree entree

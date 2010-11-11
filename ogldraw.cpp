@@ -1,7 +1,7 @@
 #include "ogldraw.h"
 
 
-void ogldraw::cube(double x,double y,double z,long size,unsigned char r,unsigned char g,unsigned char b,unsigned char a)
+void ogldraw::cube(double x,double y,double z,unsigned short size,unsigned char r,unsigned char g,unsigned char b,unsigned char a)
 {
     glColor4ub(r,g,b,a);//North face
     glVertex3d(size+x,size+y,1+z);

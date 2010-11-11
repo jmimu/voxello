@@ -14,7 +14,7 @@ VoxObj::VoxObj() :
 {
     //DESKLAMP  dopefish  duke  globe  pawn  strongbad
     //load_from_VOX("data/duke.vox");
-    load_from_VOX_octree("data/dopefish.vox");
+    load_from_VOX_octree("data/duke.vox");
 
    /*
     xsiz=4;
@@ -41,13 +41,13 @@ VoxObj::~VoxObj()
 
 ///load Ken Silverman's VOX format
 //todo: bad to load the whole file in one time
-long VoxObj::load_from_VOX (char *filnam)
+bool VoxObj::load_from_VOX (char *filnam)
 {
     FILE *fil;
     //unsigned char *voxels;
 
 
-    fil = fopen(filnam,"rb"); if (!fil) return(-1);
+    fil = fopen(filnam,"rb"); if (!fil) return(false);
     fread(&xsiz,4,1,fil); //size
     fread(&ysiz,4,1,fil); //size
     fread(&zsiz,4,1,fil); //size
@@ -69,17 +69,17 @@ long VoxObj::load_from_VOX (char *filnam)
     }
 
     std::cout<<filnam<<": got "<<xsiz<<"*"<<ysiz<<"*"<<zsiz<<"voxels"<<std::endl;
-    return 0;
+    return true;
 }
 
 
-long VoxObj::load_from_VOX_octree (char *filnam)
+bool VoxObj::load_from_VOX_octree (char *filnam)
 {
     FILE *fil;
     //unsigned char *voxels;
 
 
-    fil = fopen(filnam,"rb"); if (!fil) return(-1);
+    fil = fopen(filnam,"rb"); if (!fil) return(false);
     fread(&xsiz,4,1,fil); //size
     fread(&ysiz,4,1,fil); //size
     fread(&zsiz,4,1,fil); //size
@@ -103,11 +103,11 @@ long VoxObj::load_from_VOX_octree (char *filnam)
     std::cout<<filnam<<": got "<<xsiz<<"*"<<ysiz<<"*"<<zsiz<<"voxels"<<std::endl;
 
     //size of octree : 2^x > max size
-    long size=std::max(xsiz,ysiz);
+    unsigned short size=std::max(xsiz,ysiz);
     size=std::max(size,zsiz);
 
-    long test_size=1;
-    for (long exp=2;exp<10;exp++)
+    unsigned short test_size=1;
+    for (unsigned short exp=2;exp<10;exp++)
     {
         test_size=test_size<<1;
         if (test_size>size)
@@ -117,19 +117,19 @@ long VoxObj::load_from_VOX_octree (char *filnam)
         }
     }
 
-    long nbr_vox=0;
+    unsigned short nbr_vox=0;
 
     m_octree=new OctreeCell(0,0,0,0,size);
     unsigned char v;
-    for (long x=0;x<xsiz;x++)
-        for (long y=0;y<ysiz;y++)
-            for (long z=0;z<zsiz;z++)
+    for (unsigned short x=0;x<xsiz;x++)
+        for (unsigned short y=0;y<ysiz;y++)
+            for (unsigned short z=0;z<zsiz;z++)
             {
                 v=voxels[x*ysiz*zsiz+y*zsiz+z];
                 if (v!=255)
                 {
                     //std::cout<<"Try to add voxel "<<x<<" "<<y<<" "<<z<<std::endl;
-                    m_octree->add_voxel(x,y,z,palette[v][0],palette[v][1],palette[v][2],255);
+                    m_octree->add_voxel(x,y,z,palette[v][0],palette[v][1],palette[v][2],55);
                     nbr_vox++;
                 }
                 //else
@@ -137,11 +137,19 @@ long VoxObj::load_from_VOX_octree (char *filnam)
             }
 
 
-    std::cout<<"Total: "<<nbr_vox<<" voxels"<<std::endl;
+    std::cout<<"Total: "<<xsiz*ysiz*zsiz<<" voxels"<<std::endl;
+    std::cout<<"Simple: "<<nbr_vox<<" rendered voxels"<<std::endl;
     std::cout<<"Octree: "<<m_octree->get_nbr_vox()<<" cells"<<std::endl;
+    std::cout<<"Octree: "<<m_octree->count_terminal_cells()<<" terminal cells"<<std::endl;
     std::cout<<"Octree: "<<m_octree->count_rendering_cells()<<" rendered cells"<<std::endl;
 
-    return 0;
+    std::cout<<"Memory: "<<xsiz*ysiz*zsiz<<" bytes for voxels"<<std::endl;
+    std::cout<<"Memory: "<<m_octree->get_nbr_vox()*sizeof(OctreeCell)<<" bytes for octree"<<std::endl;
+
+    std::cout<<"May save: "<<m_octree->count_terminal_cells()*8*sizeof(long)<<" bytes by changing terminal cells"<<std::endl;
+
+
+    return true;
 }
 
 void VoxObj::draw_slow(double angleX,double angleY,double angleZ)
@@ -155,7 +163,7 @@ void VoxObj::draw_slow(double angleX,double angleY,double angleZ)
     glMatrixMode( GL_MODELVIEW );
     glLoadIdentity( );
 
-    gluLookAt(0,-zsiz/2,0,0,0,0,0,0,1);//z is up, look in y direction
+    gluLookAt(0,-zsiz,0,0,0,0,0,0,1);//z is up, look in y direction
 
     glRotated(angleZ,0,0,1);
     glRotated(angleY,0,1,0);
@@ -165,9 +173,9 @@ void VoxObj::draw_slow(double angleX,double angleY,double angleZ)
 
 
     unsigned char v;
-    for (long x=0;x<xsiz;x++)
-        for (long y=0;y<ysiz;y++)
-            for (long z=0;z<zsiz;z++)
+    for (unsigned short x=0;x<xsiz;x++)
+        for (unsigned short y=0;y<ysiz;y++)
+            for (unsigned short z=0;z<zsiz;z++)
             {
                 v=voxels[x*ysiz*zsiz+y*zsiz+z];
                 if (v!=255)
@@ -194,7 +202,7 @@ void VoxObj::draw_slow_octree(double angleX,double angleY,double angleZ)
     glMatrixMode( GL_MODELVIEW );
     glLoadIdentity( );
 
-    gluLookAt(0,-zsiz*2,0,0,0,0,0,0,1);//z is up, look in y direction
+    gluLookAt(0,-zsiz,0,0,0,0,0,0,1);//z is up, look in y direction
 
     glRotated(angleZ,0,0,1);
     glRotated(angleY,0,1,0);
@@ -203,7 +211,7 @@ void VoxObj::draw_slow_octree(double angleX,double angleY,double angleZ)
     glBegin(GL_QUADS);
 
 
-    m_octree->ogl_render(m_pos_X,m_pos_Y,m_pos_Z,xsiz, ysiz, zsiz);
+    m_octree->ogl_render(m_pos_X,m_pos_Y,m_pos_Z,xsiz>>1, ysiz>>1, zsiz>>1);
 
 
     glEnd();
@@ -219,7 +227,7 @@ void VoxObj::draw_slow_octree(double angleX,double angleY,double angleZ)
 /*
 //Called at least once for every voxel of the board
 //issolid: 0:air, 1:solid
-void setgeom (long x, long y, long z, long issolid)
+void setgeom (unsigned short x, unsigned short y, unsigned short z, unsigned short issolid)
 {
     //your code here
 }
@@ -230,37 +238,37 @@ void setgeom (long x, long y, long z, long issolid)
 //  surface voxels, but this is not true for x=0, x=1023, y=0, y=1023,
 //  z=255 (I believe)
 //argb: 32-bit color, high byte is used for shading scale (can be ignored)
-void setcol (long x, long y, long z, long argb)
+void setcol (unsigned short x, unsigned short y, unsigned short z, unsigned short argb)
 {
     //printf("%d %d %d: %08x\n",x,y,z,argb);
 }
 */
 
 ///load Ken Silverman's Voxlap5 KV6 format
-long VoxObj::load_from_KV6 (char *filnam)
+bool VoxObj::load_from_KV6 (char *filnam)
 {
     FILE *fil;
-    long leng, xsiz, ysiz, zsiz;
+    unsigned short leng, xsiz, ysiz, zsiz;
     float xpiv, ypiv, zpiv;
-    unsigned long numvoxs;
-    long namoff;
+    unsigned unsigned short numvoxs;
+    unsigned short namoff;
     //kv6data *lowermip;
     kv6voxtype *vox;      //numvoxs*sizeof(kv6voxtype)
-    unsigned long *xlen;  //xsiz*sizeof(long)
+    unsigned unsigned short *xlen;  //xsiz*sizeof(unsigned short)
     unsigned short *ylen; //xsiz*ysiz*sizeof(short)
 
-    long i;
+    unsigned short i;
     unsigned char *v, *vbuf;
 
-    fil = fopen(filnam,"rb"); if (!fil) return(-1);
+    fil = fopen(filnam,"rb"); if (!fil) return(false);
 
     //to get file size...
     fseek(fil, 0, SEEK_END); // seek to end of file
-    long file_size = ftell(fil); // get current file pointer
+    unsigned short file_size = ftell(fil); // get current file pointer
     fseek(fil, 0, SEEK_SET); // seek back to beginning of file
 
 
-    fread(&i,4,1,fil); if (i != 0x6c78764b) return(-1);
+    fread(&i,4,1,fil); if (i != 0x6c78764b) return(false);
     fread(&xsiz,4,1,fil); //size
     fread(&ysiz,4,1,fil); //size
     fread(&zsiz,4,1,fil); //size
@@ -291,8 +299,8 @@ long VoxObj::load_from_KV6 (char *filnam)
     //vox=(kv6voxtype*)vbuf;
 
 
-    i = xsiz*sizeof(long);
-    xlen = (unsigned long *)malloc(i);
+    i = xsiz*sizeof(unsigned short);
+    xlen = (unsigned unsigned short *)malloc(i);
     if (!xlen)
     {
         fclose(fil);
@@ -310,21 +318,21 @@ long VoxObj::load_from_KV6 (char *filnam)
     fread(ylen,i,1,fil);
 
     fclose(fil);
-    return 0;
+    return true;
 
 
 /*    typedef struct { double x, y, z; } dpoint3d;
     dpoint3d ipos, istr, ihei, ifor;
 
    FILE *fil;
-   long i, x, y, z;
+   unsigned short i, x, y, z;
    unsigned char *v, *vbuf;
 
    fil = fopen(filnam,"rb"); if (!fil) return(-1);
 
    //to get file size...
    fseek(fil, 0, SEEK_END); // seek to end of file
-   long file_size = ftell(fil); // get current file pointer
+   unsigned short file_size = ftell(fil); // get current file pointer
    fseek(fil, 0, SEEK_SET); // seek back to beginning of file
 
 
@@ -358,11 +366,11 @@ long VoxObj::load_from_KV6 (char *filnam)
          while (1)
          {
             for(i=z;i<v[1];i++) setgeom(x,y,i,0);
-            for(z=v[1];z<=v[2];z++) setcol(x,y,z,*(long *)&v[(z-v[1]+1)<<2]);
+            for(z=v[1];z<=v[2];z++) setcol(x,y,z,*(unsigned short *)&v[(z-v[1]+1)<<2]);
             if (!v[0]) break; z = v[2]-v[1]-v[0]+2; v += v[0]*4;
-            for(z+=v[3];z<v[3];z++) setcol(x,y,z,*(long *)&v[(z-v[3])<<2]);
+            for(z+=v[3];z<v[3];z++) setcol(x,y,z,*(unsigned short *)&v[(z-v[3])<<2]);
          }
-         v += ((((long)v[2])-((long)v[1])+2)<<2);
+         v += ((((unsigned short)v[2])-((unsigned short)v[1])+2)<<2);
       }
 
    free(vbuf);
