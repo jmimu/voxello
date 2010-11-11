@@ -7,6 +7,20 @@
 #define RES_X 640
 #define RES_Y 480
 
+/*
+ data/pawn.vox
+
+ without ocrtee optimization:
+Total: 3062 voxels
+Octree: 5353 cells
+Octree: 3062 rendered cells
+
+Total: 3062 voxels
+Octree: 4489 cells
+Octree: 2306 rendered cells
+
+ */
+
 
 int main(int argc, char *argv[])
 {
@@ -61,11 +75,12 @@ int main(int argc, char *argv[])
         ellapsed_time = current_time - last_time;
         last_time = current_time;
 
-        angleZ += 0.05 * ellapsed_time;
-        //angleY += 0.04 * ellapsed_time;
-        //angleX += 0.03 * ellapsed_time;
+        angleZ += 0.02 * ellapsed_time;
+        //angleY += 0.023 * ellapsed_time;
+        angleX += 0.027 * ellapsed_time;
 
-        obj1.draw_slow(angleX,angleY,angleZ);
+        //obj1.draw_slow(angleX,angleY,angleZ);
+        obj1.draw_slow_octree(angleX,angleY,angleZ);
 
         ellapsed_time = SDL_GetTicks() - start_time;
         if (ellapsed_time < 10)

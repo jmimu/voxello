@@ -9,12 +9,35 @@
 
 
 VoxObj::VoxObj() :
+        m_octree(0),voxels(0),
     m_pos_X(0.0),m_pos_Y(0.0),m_pos_Z(0.0),xsiz(0), ysiz(0), zsiz(0)
 {
     //DESKLAMP  dopefish  duke  globe  pawn  strongbad
-    load_from_VOX("data/strongbad.vox");
+    //load_from_VOX("data/duke.vox");
+    load_from_VOX_octree("data/dopefish.vox");
+
+   /*
+    xsiz=4;
+    ysiz=4;
+    zsiz=4;
+    m_octree=new OctreeCell(0,0,0,0,4);
+    m_octree->add_voxel(0,0,0,200,50,50,255);
+    m_octree->add_voxel(1,1,0,200,250,50,255);
+
+    m_octree->add_voxel(3,3,3,200,250,50,255);
+*/
+
+    std::cout<<"VoxObj created."<<std::endl;
 }
 
+
+VoxObj::~VoxObj()
+{
+    if (m_octree)
+        delete m_octree;
+    if (voxels)
+        free(voxels);
+}
 
 ///load Ken Silverman's VOX format
 //todo: bad to load the whole file in one time
@@ -49,20 +72,97 @@ long VoxObj::load_from_VOX (char *filnam)
     return 0;
 }
 
+
+long VoxObj::load_from_VOX_octree (char *filnam)
+{
+    FILE *fil;
+    //unsigned char *voxels;
+
+
+    fil = fopen(filnam,"rb"); if (!fil) return(-1);
+    fread(&xsiz,4,1,fil); //size
+    fread(&ysiz,4,1,fil); //size
+    fread(&zsiz,4,1,fil); //size
+
+    voxels = (unsigned char *)malloc(xsiz*ysiz*zsiz);
+
+    fread(voxels,xsiz*ysiz*zsiz,1,fil); //The 3-D array itself!
+
+    fread(palette,768,1,fil);          //VGA palette (values range from 0-63)
+    fclose(fil);
+    //colour 255 is for empty space
+
+    //change palette form 18 to 24 bits
+    for (int i=0;i<255;i++)
+    {
+        palette[i][0]=palette[i][0]<<2;
+        palette[i][1]=palette[i][1]<<2;
+        palette[i][2]=palette[i][2]<<2;
+    }
+
+    std::cout<<filnam<<": got "<<xsiz<<"*"<<ysiz<<"*"<<zsiz<<"voxels"<<std::endl;
+
+    //size of octree : 2^x > max size
+    long size=std::max(xsiz,ysiz);
+    size=std::max(size,zsiz);
+
+    long test_size=1;
+    for (long exp=2;exp<10;exp++)
+    {
+        test_size=test_size<<1;
+        if (test_size>size)
+        {
+            size=test_size;
+            break;
+        }
+    }
+
+    long nbr_vox=0;
+
+    m_octree=new OctreeCell(0,0,0,0,size);
+    unsigned char v;
+    for (long x=0;x<xsiz;x++)
+        for (long y=0;y<ysiz;y++)
+            for (long z=0;z<zsiz;z++)
+            {
+                v=voxels[x*ysiz*zsiz+y*zsiz+z];
+                if (v!=255)
+                {
+                    //std::cout<<"Try to add voxel "<<x<<" "<<y<<" "<<z<<std::endl;
+                    m_octree->add_voxel(x,y,z,palette[v][0],palette[v][1],palette[v][2],255);
+                    nbr_vox++;
+                }
+                //else
+                //    m_octree->add_voxel(x,y,z,palette[v][0],palette[v][1],palette[v][2],100);
+            }
+
+
+    std::cout<<"Total: "<<nbr_vox<<" voxels"<<std::endl;
+    std::cout<<"Octree: "<<m_octree->get_nbr_vox()<<" cells"<<std::endl;
+    std::cout<<"Octree: "<<m_octree->count_rendering_cells()<<" rendered cells"<<std::endl;
+
+    return 0;
+}
+
 void VoxObj::draw_slow(double angleX,double angleY,double angleZ)
 {
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
+    //to enable transparency
+    glEnable (GL_BLEND);
+    glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     glMatrixMode( GL_MODELVIEW );
     glLoadIdentity( );
 
-    gluLookAt(0,-zsiz,0,0,0,0,0,0,1);//z is up, look in y direction
+    gluLookAt(0,-zsiz/2,0,0,0,0,0,0,1);//z is up, look in y direction
 
     glRotated(angleZ,0,0,1);
     glRotated(angleY,0,1,0);
     glRotated(angleX,1,0,0);
 
     glBegin(GL_QUADS);
+
 
     unsigned char v;
     for (long x=0;x<xsiz;x++)
@@ -71,7 +171,7 @@ void VoxObj::draw_slow(double angleX,double angleY,double angleZ)
             {
                 v=voxels[x*ysiz*zsiz+y*zsiz+z];
                 if (v!=255)
-                    ogldraw::cube(x-xsiz/2,y-ysiz/2,-z+zsiz/2,palette[v][0],palette[v][1],palette[v][2]);
+                    ogldraw::cube(x-xsiz/2,y-ysiz/2,-z+zsiz/2,1,palette[v][0],palette[v][1],palette[v][2]);
             }
 
 
@@ -79,7 +179,39 @@ void VoxObj::draw_slow(double angleX,double angleY,double angleZ)
 
     glFlush();
     SDL_GL_SwapBuffers();
+
 }
+
+
+void VoxObj::draw_slow_octree(double angleX,double angleY,double angleZ)
+{
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
+    //to enable transparency
+    glEnable (GL_BLEND);
+    glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glMatrixMode( GL_MODELVIEW );
+    glLoadIdentity( );
+
+    gluLookAt(0,-zsiz*2,0,0,0,0,0,0,1);//z is up, look in y direction
+
+    glRotated(angleZ,0,0,1);
+    glRotated(angleY,0,1,0);
+    glRotated(angleX,1,0,0);
+
+    glBegin(GL_QUADS);
+
+
+    m_octree->ogl_render(m_pos_X,m_pos_Y,m_pos_Z,xsiz, ysiz, zsiz);
+
+
+    glEnd();
+
+    glFlush();
+    SDL_GL_SwapBuffers();
+}
+
 
 
 #ifdef KV6

@@ -7,7 +7,7 @@
 
 namespace ogldraw
 {
-    void cube(long x,long y,long z,unsigned char r,unsigned char g,unsigned char b);
+    void cube(double x,double y,double z,long size,unsigned char r,unsigned char g,unsigned char b,unsigned char a=255);
 }
 
 #endif // OGLDRAW_H
