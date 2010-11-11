@@ -32,11 +32,12 @@ class OctreeCell
 public:
     OctreeCell(OctreeCell * parent,unsigned short x_min,unsigned short y_min,unsigned short z_min,unsigned short size);
     ~OctreeCell();///affects neigh
-    void ogl_render(double m_pos_X,double m_pos_Y,double m_pos_Z,unsigned short x_half_size,unsigned short y_half_size,unsigned short z_half_size);///render via OpenGL
+    void ogl_render(double m_pos_X,double m_pos_Y,double m_pos_Z,unsigned short x_half_size,unsigned short y_half_size,unsigned short z_half_size,unsigned short min_size);///render via OpenGL
     bool create_sons();
-    void set_color(unsigned short col_r,unsigned short col_g,unsigned short col_b,unsigned short col_a);
+    void set_color(unsigned char col_r,unsigned char col_g,unsigned char col_b,unsigned char col_a);
+    void set_colour_to_parent();//at enable lower resolutions
 
-    bool add_voxel(unsigned short x,unsigned short y,unsigned short z,unsigned short r,unsigned short g,unsigned short b,unsigned short a);
+    bool add_voxel(unsigned short x,unsigned short y,unsigned short z,unsigned char r,unsigned char g,unsigned char b,unsigned char a);
     long get_nbr_vox(){return nbr_vox;}
     long count_rendering_cells();
     long count_terminal_cells();

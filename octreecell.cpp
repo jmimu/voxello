@@ -41,12 +41,13 @@ OctreeCell::~OctreeCell()///affects neigh
 }
 
 
-void OctreeCell::ogl_render(double m_pos_X,double m_pos_Y,double m_pos_Z,unsigned short x_half_size,unsigned short y_half_size,unsigned short z_half_size)///render via OpenGL
+void OctreeCell::ogl_render(double m_pos_X,double m_pos_Y,double m_pos_Z,unsigned short x_half_size,unsigned short y_half_size,unsigned short z_half_size,unsigned short min_size)///render via OpenGL
 {
-    if (m_sons[0])
+    if ((m_sons[0])&&(m_size>min_size))
+    //if (m_sons[0])
         for (unsigned int i=0;i<8;i++)
         {
-            m_sons[i]->ogl_render(m_pos_X, m_pos_Y, m_pos_Z, x_half_size, y_half_size, z_half_size);
+            m_sons[i]->ogl_render(m_pos_X, m_pos_Y, m_pos_Z, x_half_size, y_half_size, z_half_size,min_size);
         }
     else
         if (m_col_a!=0)
@@ -84,6 +85,7 @@ bool OctreeCell::create_sons()
     return true;
 }
 
+//used to give colour to parent
 long OctreeCell::count_rendering_cells()
 {
     long n=0;
@@ -98,7 +100,10 @@ long OctreeCell::count_rendering_cells()
     else
     {
         if (m_col_a!=0)
+        {
+            set_colour_to_parent();//used to give colour to parent
             return 1;
+        }
         else
             return 0;
     }
@@ -122,23 +127,34 @@ long OctreeCell::count_terminal_cells()
     }
 }
 
-void OctreeCell::set_color(unsigned short col_r,unsigned short col_g,unsigned short col_b,unsigned short col_a)
+void OctreeCell::set_color(unsigned char col_r,unsigned char col_g,unsigned char col_b,unsigned char col_a)
 {
     m_col_r=col_r;
     m_col_g=col_g;
     m_col_b=col_b;
     m_col_a=col_a;
 
-    if (m_sons[0])
+    //bad idea
+  /*  if (m_sons[0])
         for (unsigned int i=0;i<8;i++)
         {
             m_sons[i]->set_color(col_r,col_g,col_b,col_a);
             m_sons[i]=0;
-        }
+        }*/
+}
+
+//it may be better to give outside son's colour, not random...
+void OctreeCell::set_colour_to_parent()
+{
+    if (m_parent)
+    {
+        m_parent->set_color(m_col_r,m_col_g,m_col_b,m_col_a);
+        m_parent->set_colour_to_parent();
+    }
 }
 
 //
-bool OctreeCell::add_voxel(unsigned short x,unsigned short y,unsigned short z,unsigned short r,unsigned short g,unsigned short b,unsigned short a)
+bool OctreeCell::add_voxel(unsigned short x,unsigned short y,unsigned short z,unsigned char r,unsigned char g,unsigned char b,unsigned char a)
 {
     if ((x<m_x_min)||(x>m_x_min+m_size)||(y<m_y_min)||(y>m_y_min+m_size)||(z<m_z_min)||(z>m_z_min+m_size)||(m_size==0))
     {
@@ -156,7 +172,11 @@ bool OctreeCell::add_voxel(unsigned short x,unsigned short y,unsigned short z,un
     }
 
     if (!(m_sons[0]))
+    {
         create_sons();
+        //set_color(200,200,0,a);
+    }
+
 
     //find which son
     short i=0;

@@ -99,6 +99,7 @@ bool VoxObj::load_from_VOX_octree (char *filnam)
         palette[i][1]=palette[i][1]<<2;
         palette[i][2]=palette[i][2]<<2;
     }
+    //palette[0][0]=200;    palette[0][1]=200;    palette[0][2]=00;
 
     std::cout<<filnam<<": got "<<xsiz<<"*"<<ysiz<<"*"<<zsiz<<"voxels"<<std::endl;
 
@@ -106,8 +107,8 @@ bool VoxObj::load_from_VOX_octree (char *filnam)
     unsigned short size=std::max(xsiz,ysiz);
     size=std::max(size,zsiz);
 
-    unsigned short test_size=1;
-    for (unsigned short exp=2;exp<10;exp++)
+    long test_size=1;
+    for (long exp=2;exp<10;exp++)
     {
         test_size=test_size<<1;
         if (test_size>size)
@@ -117,19 +118,19 @@ bool VoxObj::load_from_VOX_octree (char *filnam)
         }
     }
 
-    unsigned short nbr_vox=0;
+    long nbr_vox=0;
 
     m_octree=new OctreeCell(0,0,0,0,size);
     unsigned char v;
-    for (unsigned short x=0;x<xsiz;x++)
-        for (unsigned short y=0;y<ysiz;y++)
-            for (unsigned short z=0;z<zsiz;z++)
+    for (long x=0;x<xsiz;x++)
+        for (long y=0;y<ysiz;y++)
+            for (long z=0;z<zsiz;z++)
             {
                 v=voxels[x*ysiz*zsiz+y*zsiz+z];
                 if (v!=255)
                 {
                     //std::cout<<"Try to add voxel "<<x<<" "<<y<<" "<<z<<std::endl;
-                    m_octree->add_voxel(x,y,z,palette[v][0],palette[v][1],palette[v][2],55);
+                    m_octree->add_voxel(x,y,z,palette[v][0],palette[v][1],palette[v][2],255);
                     nbr_vox++;
                 }
                 //else
@@ -163,7 +164,7 @@ void VoxObj::draw_slow(double angleX,double angleY,double angleZ)
     glMatrixMode( GL_MODELVIEW );
     glLoadIdentity( );
 
-    gluLookAt(0,-zsiz,0,0,0,0,0,0,1);//z is up, look in y direction
+    gluLookAt(0,-zsiz,0,0,0,0,0,0,-1);//z is down, look in y direction
 
     glRotated(angleZ,0,0,1);
     glRotated(angleY,0,1,0);
@@ -173,9 +174,9 @@ void VoxObj::draw_slow(double angleX,double angleY,double angleZ)
 
 
     unsigned char v;
-    for (unsigned short x=0;x<xsiz;x++)
-        for (unsigned short y=0;y<ysiz;y++)
-            for (unsigned short z=0;z<zsiz;z++)
+    for (long x=0;x<xsiz;x++)
+        for (long y=0;y<ysiz;y++)
+            for (long z=0;z<zsiz;z++)
             {
                 v=voxels[x*ysiz*zsiz+y*zsiz+z];
                 if (v!=255)
@@ -202,7 +203,7 @@ void VoxObj::draw_slow_octree(double angleX,double angleY,double angleZ)
     glMatrixMode( GL_MODELVIEW );
     glLoadIdentity( );
 
-    gluLookAt(0,-zsiz,0,0,0,0,0,0,1);//z is up, look in y direction
+    gluLookAt(0,-zsiz,0,0,0,0,0,0,-1);//z is down, look in y direction
 
     glRotated(angleZ,0,0,1);
     glRotated(angleY,0,1,0);
@@ -211,7 +212,7 @@ void VoxObj::draw_slow_octree(double angleX,double angleY,double angleZ)
     glBegin(GL_QUADS);
 
 
-    m_octree->ogl_render(m_pos_X,m_pos_Y,m_pos_Z,xsiz>>1, ysiz>>1, zsiz>>1);
+    m_octree->ogl_render(m_pos_X,m_pos_Y,m_pos_Z,xsiz>>1, ysiz>>1, zsiz>>1,1);
 
 
     glEnd();

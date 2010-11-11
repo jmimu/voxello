@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
 
     VoxObj obj1;
 
-    double angleZ = 0;
+    double angleZ = 3.14;
     double angleY = 0;
     double angleX = 0;
 
@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
 
         angleZ += 0.02 * ellapsed_time;
         //angleY += 0.023 * ellapsed_time;
-        angleX += 0.027 * ellapsed_time;
+        //angleX += 0.027 * ellapsed_time;
 
         //obj1.draw_slow(angleX,angleY,angleZ);
         obj1.draw_slow_octree(angleX,angleY,angleZ);
@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
         ellapsed_time = SDL_GetTicks() - start_time;
         if (ellapsed_time < 20)
         {
-            SDL_Delay(20 - ellapsed_time);
+            //SDL_Delay(20 - ellapsed_time);
         }
 
     }

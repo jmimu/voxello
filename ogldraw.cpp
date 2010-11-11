@@ -1,13 +1,13 @@
 #include "ogldraw.h"
 
-
+//TODO: compute which facse are oriented to the camera, to hide the 3 others
 void ogldraw::cube(double x,double y,double z,unsigned short size,unsigned char r,unsigned char g,unsigned char b,unsigned char a)
 {
     glColor4ub(r,g,b,a);//North face
-    glVertex3d(size+x,size+y,1+z);
+    glVertex3d(size+x,size+y,size+z);
     glVertex3d(size+x,size+y,z);
-    glVertex3d(x,1+y,+z);
-    glVertex3d(x,1+y,1+z);
+    glVertex3d(x,size+y,+z);
+    glVertex3d(x,size+y,size+z);
 
     glColor4ub(r,g,b,a);//East face
     glVertex3d(size+x,y,size+z);
