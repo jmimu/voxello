@@ -47,10 +47,16 @@ public:
     void set_colour_to_parent();//at enable lower resolutions
 
     bool add_voxel(unsigned short x,unsigned short y,unsigned short z,unsigned char r,unsigned char g,unsigned char b,unsigned char a);
+    bool del_voxel(unsigned short x,unsigned short y,unsigned short z);
     long get_nbr_vox(){return nbr_vox;}
     long count_rendering_cells();
     long count_terminal_cells();
     bool update_covered();//if all neighs are full
+    void update_parent_is_full();//recursive
+
+    bool check_all_alike();//check if all sons are alike
+
+    void dump();//write info
 protected:
     OctreeCell * m_parent;
     unsigned short m_x_min,m_y_min,m_z_min,m_size;
@@ -60,6 +66,7 @@ protected:
 
     //for sons, use an other class? (to have sons only for not final cells?
     OctreeCell *m_sons[8];
+    long vox_num;
     static long nbr_vox;
 
     static short fast_neigh_matrix[8][6][2];//to compute quickly neigh

@@ -15,20 +15,52 @@ VoxObj::VoxObj() :
 {
     //DESKLAMP  dopefish  duke  globe  pawn  strongbad
     //load_from_VOX("data/duke.vox");
-    load_from_VOX_octree("data/pawn.vox");
+    load_from_VOX_octree("data/strongbad.vox");
 
-
-    xsiz=2;
-    ysiz=2;
-    zsiz=2;
-    m_octree=new OctreeCell(0,0,0,0,2);
+/*
+    xsiz=4;
+    ysiz=4;
+    zsiz=4;
+    m_octree=new OctreeCell(0,0,0,0,4);
     m_octree->add_voxel(0,0,0,200,50,50,255);
+    m_octree->add_voxel(0,1,1,200,50,50,255);
+    m_octree->add_voxel(1,0,1,200,50,50,255);
+    m_octree->add_voxel(1,1,2,200,50,50,255);
+    m_octree->add_voxel(2,1,1,200,250,50,255);
+    m_octree->add_voxel(1,2,1,200,50,50,255);
+    m_octree->add_voxel(1,1,1,200,250,50,255);*/
+    //m_octree->del_voxel(0,0,0);
     //m_octree->add_voxel(1,1,0,200,250,50,255);
-
     //m_octree->add_voxel(3,3,3,200,250,50,255);
+
+/*
+    xsiz=8;
+    ysiz=8;
+    zsiz=8;
+    m_octree=new OctreeCell(0,0,0,0,8);
+    for (int x=1;x<5;x++)
+        for (int y=1;y<5;y++)
+            for (int z=1;z<5;z++)
+            {
+                m_octree->add_voxel(x,y,z,200,0,0,255);
+                //m_octree->add_voxel(1+x,1+y,1+z,rand()%255,rand()%255,rand()%255,255);
+            }
+*/
+
+    //need to call m_octree->count_rendering_cells() to update parents colors and covered status
+    std::cout<<"Octree: "<<m_octree->get_nbr_vox()<<" cells"<<std::endl;
+    std::cout<<"Octree: "<<m_octree->count_terminal_cells()<<" terminal cells"<<std::endl;
+    std::cout<<"Octree: "<<m_octree->count_rendering_cells()<<" rendered cells"<<std::endl;
+
+    std::cout<<"Memory: "<<xsiz*ysiz*zsiz<<" bytes for voxels"<<std::endl;
+    std::cout<<"Memory: "<<m_octree->get_nbr_vox()*sizeof(OctreeCell)<<" bytes for octree"<<std::endl;
+
+    std::cout<<"May save: "<<m_octree->count_terminal_cells()*8*sizeof(long)<<" bytes by changing terminal cells"<<std::endl;
 
 
     std::cout<<"VoxObj created."<<std::endl;
+    m_octree->count_rendering_cells();
+
 }
 
 
@@ -139,18 +171,9 @@ bool VoxObj::load_from_VOX_octree (std::string filnam)
                 //    m_octree->add_voxel(x,y,z,palette[v][0],palette[v][1],palette[v][2],100);
             }
 
-
     std::cout<<"Total: "<<xsiz*ysiz*zsiz<<" voxels"<<std::endl;
+
     std::cout<<"Simple: "<<nbr_vox<<" rendered voxels"<<std::endl;
-    std::cout<<"Octree: "<<m_octree->get_nbr_vox()<<" cells"<<std::endl;
-    std::cout<<"Octree: "<<m_octree->count_terminal_cells()<<" terminal cells"<<std::endl;
-    std::cout<<"Octree: "<<m_octree->count_rendering_cells()<<" rendered cells"<<std::endl;
-
-    std::cout<<"Memory: "<<xsiz*ysiz*zsiz<<" bytes for voxels"<<std::endl;
-    std::cout<<"Memory: "<<m_octree->get_nbr_vox()*sizeof(OctreeCell)<<" bytes for octree"<<std::endl;
-
-    std::cout<<"May save: "<<m_octree->count_terminal_cells()*8*sizeof(long)<<" bytes by changing terminal cells"<<std::endl;
-
 
     return true;
 }

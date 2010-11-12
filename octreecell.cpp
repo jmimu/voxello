@@ -4,13 +4,17 @@
 
 #include "ogldraw.h"
 
+//if DRAW_EMPTY defined, empty cells are rendered with alpha = DRAW_EMPTY
+//#define DRAW_EMPTY 100
+//#define DEBUG_OctreeCell
+
 //to compute quickly neigh among sons :
 //dim 1: number of the son
 //dim 2: num of the neigh
 //dim 3: 0: parent's neig (-1 if own parent); 1: number of the son of the neigh of the parent
 short OctreeCell::fast_neigh_matrix[8][6][2]=
-{{ { 01,}, {-1,1}, { 2,2}, {-1,2}, { 4,4}, {-1,4} },
- { {-1,0}, { 1,0}, { 2,4}, {-1,3}, { 4,5}, {-1,5} },
+{{ { 0,1}, {-1,1}, { 2,2}, {-1,2}, { 4,4}, {-1,4} },
+ { {-1,0}, { 1,0}, { 2,3}, {-1,3}, { 4,5}, {-1,5} },
  { { 0,3}, {-1,3}, {-1,0}, { 3,0}, { 4,6}, {-1,6} },
  { {-1,2}, { 1,2}, {-1,1}, { 3,1}, { 4,7}, {-1,7} },
  { { 0,5}, {-1,5}, { 2,6}, {-1,6}, {-1,0}, { 5,0} },
@@ -23,10 +27,9 @@ long OctreeCell::nbr_vox=0;
 OctreeCell::OctreeCell(OctreeCell * parent,unsigned short x_min,unsigned short y_min,unsigned short z_min,unsigned short size) :
         m_parent(parent),
         m_x_min(x_min),m_y_min(y_min),m_z_min(z_min),m_size(size),
-        m_col_r(rand()%256),m_col_g(rand()%256),m_col_b(rand()%256),m_col_a(100),
-        m_flags(0x0)
+        m_col_r(rand()%256),m_col_g(rand()%256),m_col_b(rand()%256),m_col_a(00),
+        m_flags(0x0),vox_num(nbr_vox++)
 {
-    nbr_vox++;
 #ifdef DEBUG_OctreeCell
     std::cout<<"Create OctreeCell num "<<nbr_vox<<
             " p "<<m_x_min<<" "<<m_y_min<<" "<<m_z_min<<" "<<m_size<<std::endl;
@@ -39,11 +42,31 @@ OctreeCell::OctreeCell(OctreeCell * parent,unsigned short x_min,unsigned short y
 
 }
 
+void OctreeCell::dump()//write info
+{
+    std::cout<<"Cell "<<vox_num<<" "<<m_x_min<<" "<<m_y_min<<" "<<m_z_min<<": "<<m_size<<", f"<<(m_flags&IS_FULL)<<" c"<<(m_flags&IS_COVERED)<<"\n    ";
+    std::cout<<"parent: ";
+    if (m_parent)
+        std::cout<<m_parent->vox_num<<"  ";
+    else
+        std::cout<<"    ";
+    for (unsigned int i=0;i<6;i++)
+    {
+        if (m_neigh[i])
+            std::cout<<"*"<<m_neigh[i]->vox_num;
+        else
+            std::cout<<"*?";
+    }
+    std::cout<<std::endl;
+}
+
+
 OctreeCell::~OctreeCell()///affects neigh
 {
-    nbr_vox--;
+    //nbr_vox--;
 #ifdef DEBUG_OctreeCell
     //std::cout<<"Delete OctreeCell "<<m_x_min<<" "<<m_y_min<<" "<<m_z_min<<" "<<m_size<<std::endl;
+    //dump();
 #endif
     //call son's destructor
     if (m_sons[0])
@@ -57,7 +80,13 @@ OctreeCell::~OctreeCell()///affects neigh
         for (unsigned int way=0;way<2;way++)
         {
             if (m_neigh[(dir<<1)+way])
-                m_neigh[(dir<<1)+way]->m_neigh[(dir<<1)+(1-way)]=m_parent;//the neigh of the neigh is the parent
+            {
+                /*std::cout<<"update neigh "<<m_neigh[(dir<<1)+way]->vox_num<<" "
+                        <<m_neigh[(dir<<1)+way]->m_neigh[(dir<<1)+(1-way)]->vox_num<<"  => "
+                        <<m_parent->vox_num<<std::endl;*/
+                if (m_neigh[(dir<<1)+way]->m_parent!=m_parent)//change neigh only for far neighs!
+                    m_neigh[(dir<<1)+way]->m_neigh[(dir<<1)+(1-way)]=m_parent;//the neigh of the neigh is the parent
+            }
         }
 
 }
@@ -72,9 +101,17 @@ void OctreeCell::ogl_render(double m_pos_X,double m_pos_Y,double m_pos_Z,unsigne
             m_sons[i]->ogl_render(m_pos_X, m_pos_Y, m_pos_Z, x_half_size, y_half_size, z_half_size,min_size);
         }
     else
-        if ((m_col_a!=0))//&&(m_flags&IS_COVERED))
+    {
+        if ((m_col_a!=0)&&(!(m_flags&IS_COVERED)))
             ogldraw::cube(m_x_min-x_half_size+m_pos_X,m_y_min-y_half_size+m_pos_Y,
                           m_z_min-z_half_size+m_pos_Z,m_size,m_col_r,m_col_g,m_col_b,m_col_a);
+#ifdef DRAW_EMPTY
+        if ((m_col_a==0))//&&(m_flags&IS_COVERED))
+            ogldraw::cube(m_x_min-x_half_size+m_pos_X,m_y_min-y_half_size+m_pos_Y,
+                          m_z_min-z_half_size+m_pos_Z,m_size,m_col_r,m_col_g,m_col_b,DRAW_EMPTY);
+#endif
+    }
+
 }
 
 bool OctreeCell::create_sons()
@@ -111,56 +148,83 @@ bool OctreeCell::create_sons()
             if (fast_neigh_matrix[son][neigh][0]==-1)//close neigh, no need to update invert
                 m_sons[son]->m_neigh[neigh]=m_sons[fast_neigh_matrix[son][neigh][1]];
             else//check neig of the parent
-                if (m_parent)
-                {
-                    if (m_parent->m_neigh[fast_neigh_matrix[son][neigh][0]]) //parent's neig exists
-                        if (m_parent->m_neigh[fast_neigh_matrix[son][neigh][0]]->m_sons[0]) //it has sons
+            {
+                if (this->m_neigh[fast_neigh_matrix[son][neigh][0]]) //parent's neig exists
+                    if (this->m_neigh[fast_neigh_matrix[son][neigh][0]]->m_sons[0]) //it has sons
+                    {
+                        m_sons[son]->m_neigh[neigh]=this->m_neigh[fast_neigh_matrix[son][neigh][0]]->m_sons[fast_neigh_matrix[son][neigh][1]];
+                        //check is size is the same for both
+                        //invert of neigh is neigh^1!
+                        if (m_sons[son]->m_neigh[neigh]->m_size == m_sons[son]->m_size) //same size, update invert neigh
                         {
-                            m_sons[son]->m_neigh[neigh]=m_parent->m_neigh[fast_neigh_matrix[son][neigh][0]]->m_sons[fast_neigh_matrix[son][neigh][1]];
-                            //check is size is the same for both
-                            //invert of neigh is neigh^1!
-                            if (m_sons[son]->m_neigh[neigh]->m_size == m_sons[son]->m_size) //same size, update invert neigh
-                            {
-                                m_sons[son]->m_neigh[neigh]->m_neigh[ neigh^1 ]=m_sons[son];
-                                //and check its covered
-                                m_sons[son]->m_neigh[neigh]->m_neigh[ neigh^1 ]->update_covered();
-                            }
+                            m_sons[son]->m_neigh[neigh]->m_neigh[ neigh^1 ]=m_sons[son];
+                            //and check its covered
+                            //m_sons[son]->m_neigh[neigh]->m_neigh[ neigh^1 ]->update_covered();
                         }
-                        else //no sons => neigh is parent's neigh (not same size)
-                            m_sons[son]->m_neigh[neigh]=m_parent->m_neigh[fast_neigh_matrix[son][neigh][0]];
-                    else //no parent's neig
-                        m_sons[son]->m_neigh[neigh]=0;
-                }
-                else//there is no parent
+                    }
+                    else //no sons => neigh is parent's neigh (not same size)
+                        m_sons[son]->m_neigh[neigh]=this->m_neigh[fast_neigh_matrix[son][neigh][0]];
+                else //no parent's neig
                     m_sons[son]->m_neigh[neigh]=0;
+            }
         }
-        m_sons[son]->update_covered();
+        //m_sons[son]->update_covered();
     }
 
 
     return true;
 }
 
+//call to the parent only when a leaf is not empty
+void OctreeCell::update_parent_is_full()//recursive
+{
+    //don't check if has sons. Supposed to be called from a son
+    bool is_full=false;
+    bool full_status_changed=false;
+    for (unsigned int son=0;son<8;son++)
+        if (!(m_sons[son]->m_flags&IS_FULL))
+        {
+            is_full=false;
+            break;
+        }
+    full_status_changed = ((m_flags&IS_FULL)!=is_full);//status has changed
+    if (is_full)
+      m_flags|=IS_FULL;
+    else
+      m_flags&=~IS_FULL;
+    if ((m_parent)&&(full_status_changed))
+        m_parent->update_parent_is_full();
+}
+
 bool OctreeCell::update_covered()//if all neighs are full
 {
     bool covered=true;
+    bool covered_status_changed=false;
     for (unsigned int neigh=0;neigh<6;neigh++)
-        if ((!m_neigh[neigh])||(m_neigh[neigh]->m_col_a==0))
+        if ((!m_neigh[neigh])||(!((m_neigh[neigh]->m_flags)&IS_FULL)))
         {
             covered=false;
             break;
         }
+
+    covered_status_changed = ((m_flags&IS_COVERED)!=covered);//status has changed
     if (covered)
-        m_flags|=IS_COVERED;
+      m_flags|=IS_COVERED;
     else
-        m_flags&=~IS_COVERED;
+      m_flags&=~IS_COVERED;
+    if ((m_parent)&&(covered_status_changed))
+        m_parent->update_covered();
 
     return covered;
 }
 
 //used to give colour to parent
+//and to update covered status
 long OctreeCell::count_rendering_cells()
 {
+#ifdef DEBUG_OctreeCell
+        dump();
+#endif
     long n=0;
     if (m_sons[0])
     {
@@ -172,9 +236,11 @@ long OctreeCell::count_rendering_cells()
     }
     else
     {
+        update_covered();
         if (m_col_a!=0)
         {
-            set_colour_to_parent();//used to give colour to parent
+            if (!(m_flags&IS_COVERED))//don't put covered son colour to parent
+                set_colour_to_parent();//used to give colour to parent
             return 1;
         }
         else
@@ -226,6 +292,41 @@ void OctreeCell::set_colour_to_parent()
     }
 }
 
+bool OctreeCell::del_voxel(unsigned short x,unsigned short y,unsigned short z)
+{
+    if ((x<m_x_min)||(x>m_x_min+m_size)||(y<m_y_min)||(y>m_y_min+m_size)||(z<m_z_min)||(z>m_z_min+m_size)||(m_size==0))
+    {
+        std::cerr<<"Pos error! "<<x<<" "<<y<<" "<<z<<std::endl;
+        return false;
+    }
+    if (m_size==1)
+    {
+#ifdef DEBUG_OctreeCell
+        std::cout<<"Add voxel to "<<x<<" "<<y<<" "<<z<<std::endl;
+#endif
+        set_color(m_col_r,m_col_g,m_col_b,0);
+        m_flags&=~IS_FULL;
+        if (m_parent)
+            m_parent->update_parent_is_full();
+        return true;
+    }
+
+    if (!(m_sons[0]))
+        std::cerr<<"Impossible to remove non-existing voxel: "<<x<<" "<<y<<" "<<z<<std::endl;
+    //find which son
+    short i=0;
+    if (z>=m_z_min+m_size/2) i+=4;
+    if (y>=m_y_min+m_size/2) i+=2;
+    if (x>=m_x_min+m_size/2) i+=1;
+
+    m_sons[i]->del_voxel(x,y,z);
+
+    //check if all sons are alike
+    check_all_alike();
+
+    return true;
+}
+
 //
 bool OctreeCell::add_voxel(unsigned short x,unsigned short y,unsigned short z,unsigned char r,unsigned char g,unsigned char b,unsigned char a)
 {
@@ -241,6 +342,12 @@ bool OctreeCell::add_voxel(unsigned short x,unsigned short y,unsigned short z,un
         std::cout<<"Add voxel to "<<x<<" "<<y<<" "<<z<<std::endl;
 #endif
         set_color(r,g,b,a);
+        if (a!=0)
+            m_flags|=IS_FULL;
+        else
+            m_flags&=~IS_FULL;
+        if (m_parent)
+            m_parent->update_parent_is_full();
         return true;
     }
 
@@ -259,29 +366,62 @@ bool OctreeCell::add_voxel(unsigned short x,unsigned short y,unsigned short z,un
 
     m_sons[i]->add_voxel(x,y,z,r,g,b,a);
 
-
     //check if all sons are alike
+    check_all_alike();
+
+    return true;
+}
+
+//check if all sons are alike
+bool OctreeCell::check_all_alike()
+{
+    if (!m_sons)
+        return true;
+
+    //check if all sons are alike and have no sons! (not supposed do destroy sons with sons)
     bool all_alike=true;
-    for (unsigned int i=1;i<8;i++)
-    {
-        if ((m_sons[i]->m_col_r!=m_sons[0]->m_col_r)||(m_sons[i]->m_col_g!=m_sons[0]->m_col_g)||
-            (m_sons[i]->m_col_b!=m_sons[0]->m_col_b)||(m_sons[i]->m_col_a!=m_sons[0]->m_col_a))
+    if (m_sons[0]->m_col_a==0)
+    {//for empty cells, colour is taken into account
+        for (unsigned int i=0;i<8;i++)
         {
-            all_alike=false;
-            break;
+            if ((m_sons[i]->m_col_a!=0)||(m_sons[i]->m_sons[0]))
+            {
+                all_alike=false;
+                break;
+            }
+        }
+    }else{
+        for (unsigned int i=0;i<8;i++)
+        {
+            if ((m_sons[i]->m_col_r!=m_sons[0]->m_col_r)||(m_sons[i]->m_col_g!=m_sons[0]->m_col_g)||
+                (m_sons[i]->m_col_b!=m_sons[0]->m_col_b)||(m_sons[i]->m_col_a!=m_sons[0]->m_col_a)||(m_sons[i]->m_sons[0]))
+            {
+                all_alike=false;
+                break;
+            }
         }
     }
     if (all_alike)
     {
+        //normally don't have to check if is full...
+        if (m_sons[0]->m_col_a!=0) //all alike but not empty
+            m_flags|=IS_FULL;
+        else
+            m_flags&=~IS_FULL;
+
         m_col_r=m_sons[0]->m_col_r;
         m_col_g=m_sons[0]->m_col_g;
         m_col_b=m_sons[0]->m_col_b;
         m_col_a=m_sons[0]->m_col_a;
+        //std::cout<<"Will delete sons for ";
+        //dump();
         for (unsigned int i=0;i<8;i++)
         {
             delete m_sons[i];m_sons[i]=0;
         }
-    }
-    return true;
-}
+        //std::cout<<"Deleted sons for ";
+        //dump();
 
+    }
+    return all_alike;
+}

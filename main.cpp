@@ -41,9 +41,9 @@ int main(int argc, char *argv[])
 
     VoxObj obj1;
 
-    double angleZ = 180;
+    double angleZ = 180*2;
     double angleY = 0;
-    double angleX = 70;
+    double angleX = 70*2;
 
     short sub_rendering_scale=0;
 
