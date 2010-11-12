@@ -4,14 +4,27 @@
 
 #include "ogldraw.h"
 
+//to compute quickly neigh among sons :
+//dim 1: number of the son
+//dim 2: num of the neigh
+//dim 3: 0: parent's neig (-1 if own parent); 1: number of the son of the neigh of the parent
+short OctreeCell::fast_neigh_matrix[8][6][2]=
+{{ { 01,}, {-1,1}, { 2,2}, {-1,2}, { 4,4}, {-1,4} },
+ { {-1,0}, { 1,0}, { 2,4}, {-1,3}, { 4,5}, {-1,5} },
+ { { 0,3}, {-1,3}, {-1,0}, { 3,0}, { 4,6}, {-1,6} },
+ { {-1,2}, { 1,2}, {-1,1}, { 3,1}, { 4,7}, {-1,7} },
+ { { 0,5}, {-1,5}, { 2,6}, {-1,6}, {-1,0}, { 5,0} },
+ { {-1,4}, { 1,4}, { 2,7}, {-1,7}, {-1,1}, { 5,1} },
+ { { 0,7}, {-1,7}, {-1,4}, { 3,4}, {-1,2}, { 5,2} },
+ { {-1,6}, { 1,6}, {-1,5}, { 3,5}, {-1,3}, { 5,3} }};
 
 long OctreeCell::nbr_vox=0;
 
 OctreeCell::OctreeCell(OctreeCell * parent,unsigned short x_min,unsigned short y_min,unsigned short z_min,unsigned short size) :
         m_parent(parent),
-        m_flags(0x0),
         m_x_min(x_min),m_y_min(y_min),m_z_min(z_min),m_size(size),
-        m_col_r(rand()%256),m_col_g(rand()%256),m_col_b(rand()%256),m_col_a(00)
+        m_col_r(rand()%256),m_col_g(rand()%256),m_col_b(rand()%256),m_col_a(100),
+        m_flags(0x0)
 {
     nbr_vox++;
 #ifdef DEBUG_OctreeCell
@@ -38,6 +51,15 @@ OctreeCell::~OctreeCell()///affects neigh
         {
             delete m_sons[i];
         }
+
+    //update neigh
+    for (unsigned int dir=0;dir<3;dir++)
+        for (unsigned int way=0;way<2;way++)
+        {
+            if (m_neigh[(dir<<1)+way])
+                m_neigh[(dir<<1)+way]->m_neigh[(dir<<1)+(1-way)]=m_parent;//the neigh of the neigh is the parent
+        }
+
 }
 
 
@@ -50,7 +72,7 @@ void OctreeCell::ogl_render(double m_pos_X,double m_pos_Y,double m_pos_Z,unsigne
             m_sons[i]->ogl_render(m_pos_X, m_pos_Y, m_pos_Z, x_half_size, y_half_size, z_half_size,min_size);
         }
     else
-        if (m_col_a!=0)
+        if ((m_col_a!=0))//&&(m_flags&IS_COVERED))
             ogldraw::cube(m_x_min-x_half_size+m_pos_X,m_y_min-y_half_size+m_pos_Y,
                           m_z_min-z_half_size+m_pos_Z,m_size,m_col_r,m_col_g,m_col_b,m_col_a);
 }
@@ -80,9 +102,60 @@ bool OctreeCell::create_sons()
     m_sons[7]=new OctreeCell(this,x_mid,y_mid,z_mid,new_size);
 
 
-    //TODO: compute neigh
+
+    //update neigh
+    for (unsigned int son=0;son<8;son++)
+    {
+        for (unsigned int neigh=0;neigh<6;neigh++)
+        {
+            if (fast_neigh_matrix[son][neigh][0]==-1)//close neigh, no need to update invert
+                m_sons[son]->m_neigh[neigh]=m_sons[fast_neigh_matrix[son][neigh][1]];
+            else//check neig of the parent
+                if (m_parent)
+                {
+                    if (m_parent->m_neigh[fast_neigh_matrix[son][neigh][0]]) //parent's neig exists
+                        if (m_parent->m_neigh[fast_neigh_matrix[son][neigh][0]]->m_sons[0]) //it has sons
+                        {
+                            m_sons[son]->m_neigh[neigh]=m_parent->m_neigh[fast_neigh_matrix[son][neigh][0]]->m_sons[fast_neigh_matrix[son][neigh][1]];
+                            //check is size is the same for both
+                            //invert of neigh is neigh^1!
+                            if (m_sons[son]->m_neigh[neigh]->m_size == m_sons[son]->m_size) //same size, update invert neigh
+                            {
+                                m_sons[son]->m_neigh[neigh]->m_neigh[ neigh^1 ]=m_sons[son];
+                                //and check its covered
+                                m_sons[son]->m_neigh[neigh]->m_neigh[ neigh^1 ]->update_covered();
+                            }
+                        }
+                        else //no sons => neigh is parent's neigh (not same size)
+                            m_sons[son]->m_neigh[neigh]=m_parent->m_neigh[fast_neigh_matrix[son][neigh][0]];
+                    else //no parent's neig
+                        m_sons[son]->m_neigh[neigh]=0;
+                }
+                else//there is no parent
+                    m_sons[son]->m_neigh[neigh]=0;
+        }
+        m_sons[son]->update_covered();
+    }
+
 
     return true;
+}
+
+bool OctreeCell::update_covered()//if all neighs are full
+{
+    bool covered=true;
+    for (unsigned int neigh=0;neigh<6;neigh++)
+        if ((!m_neigh[neigh])||(m_neigh[neigh]->m_col_a==0))
+        {
+            covered=false;
+            break;
+        }
+    if (covered)
+        m_flags|=IS_COVERED;
+    else
+        m_flags&=~IS_COVERED;
+
+    return covered;
 }
 
 //used to give colour to parent
@@ -209,5 +282,6 @@ bool OctreeCell::add_voxel(unsigned short x,unsigned short y,unsigned short z,un
             delete m_sons[i];m_sons[i]=0;
         }
     }
+    return true;
 }
 

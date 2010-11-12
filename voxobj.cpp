@@ -9,23 +9,24 @@
 
 
 VoxObj::VoxObj() :
-        m_octree(0),voxels(0),
-    m_pos_X(0.0),m_pos_Y(0.0),m_pos_Z(0.0),xsiz(0), ysiz(0), zsiz(0)
+        voxels(0),
+        m_pos_X(0.0),m_pos_Y(0.0),m_pos_Z(0.0),xsiz(0), ysiz(0), zsiz(0),
+        m_octree(0)
 {
     //DESKLAMP  dopefish  duke  globe  pawn  strongbad
     //load_from_VOX("data/duke.vox");
-    load_from_VOX_octree("data/dopefish.vox");
+    load_from_VOX_octree("data/pawn.vox");
 
-   /*
-    xsiz=4;
-    ysiz=4;
-    zsiz=4;
-    m_octree=new OctreeCell(0,0,0,0,4);
+
+    xsiz=2;
+    ysiz=2;
+    zsiz=2;
+    m_octree=new OctreeCell(0,0,0,0,2);
     m_octree->add_voxel(0,0,0,200,50,50,255);
-    m_octree->add_voxel(1,1,0,200,250,50,255);
+    //m_octree->add_voxel(1,1,0,200,250,50,255);
 
-    m_octree->add_voxel(3,3,3,200,250,50,255);
-*/
+    //m_octree->add_voxel(3,3,3,200,250,50,255);
+
 
     std::cout<<"VoxObj created."<<std::endl;
 }
@@ -41,13 +42,13 @@ VoxObj::~VoxObj()
 
 ///load Ken Silverman's VOX format
 //todo: bad to load the whole file in one time
-bool VoxObj::load_from_VOX (char *filnam)
+bool VoxObj::load_from_VOX (std::string filnam)
 {
     FILE *fil;
     //unsigned char *voxels;
 
 
-    fil = fopen(filnam,"rb"); if (!fil) return(false);
+    fil = fopen(filnam.c_str(),"rb"); if (!fil) return(false);
     fread(&xsiz,4,1,fil); //size
     fread(&ysiz,4,1,fil); //size
     fread(&zsiz,4,1,fil); //size
@@ -73,13 +74,13 @@ bool VoxObj::load_from_VOX (char *filnam)
 }
 
 
-bool VoxObj::load_from_VOX_octree (char *filnam)
+bool VoxObj::load_from_VOX_octree (std::string filnam)
 {
     FILE *fil;
     //unsigned char *voxels;
 
 
-    fil = fopen(filnam,"rb"); if (!fil) return(false);
+    fil = fopen(filnam.c_str(),"rb"); if (!fil) return(false);
     fread(&xsiz,4,1,fil); //size
     fread(&ysiz,4,1,fil); //size
     fread(&zsiz,4,1,fil); //size
@@ -99,7 +100,8 @@ bool VoxObj::load_from_VOX_octree (char *filnam)
         palette[i][1]=palette[i][1]<<2;
         palette[i][2]=palette[i][2]<<2;
     }
-    //palette[0][0]=200;    palette[0][1]=200;    palette[0][2]=00;
+    //just for tests: change black (inside) to yellow
+    palette[0][0]=200;    palette[0][1]=200;    palette[0][2]=00;
 
     std::cout<<filnam<<": got "<<xsiz<<"*"<<ysiz<<"*"<<zsiz<<"voxels"<<std::endl;
 
@@ -203,7 +205,7 @@ void VoxObj::draw_slow_octree(double angleX,double angleY,double angleZ,short su
     glMatrixMode( GL_MODELVIEW );
     glLoadIdentity( );
 
-    gluLookAt(0,-zsiz,0,0,0,0,0,0,1);//z is down, look in y direction
+    gluLookAt(0,-zsiz-5,0,0,0,0,0,0,1);//z is down, look in y direction
 
     glRotated(angleY,0,1,0);
     glRotated(angleZ,0,0,1);

@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
 
     glMatrixMode( GL_PROJECTION );
     glLoadIdentity();
-    gluPerspective(70,(double)RES_X/RES_Y,10,1000);
+    gluPerspective(70,(double)RES_X/RES_Y,1,1000);
 
     glEnable(GL_DEPTH_TEST);
 
@@ -87,8 +87,8 @@ int main(int argc, char *argv[])
                 break;
 
                 case SDL_MOUSEMOTION:
-                angleZ -= event.motion.xrel*0.5;
-                angleX += event.motion.yrel*0.5;
+                angleZ -= event.motion.xrel*1;
+                angleX += event.motion.yrel*1;
                 break;
 
                 case SDL_MOUSEBUTTONDOWN:

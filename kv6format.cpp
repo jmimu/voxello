@@ -8,7 +8,7 @@ void savekv6 (const char *filnam, kv6data *kv)
         FILE *fil;
         long i;
 
-        if (fil = fopen(filnam,"wb"))
+        if ((fil = fopen(filnam,"wb")))
         {
                 i = 0x6c78764b; fwrite(&i,4,1,fil); //Kvxl
                 fwrite(&kv->xsiz,4,1,fil); fwrite(&kv->ysiz,4,1,fil); fwrite(&kv->zsiz,4,1,fil);

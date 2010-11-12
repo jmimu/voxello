@@ -12,8 +12,17 @@
 
 /**
   Neighbour order :
-    EWNSUD
-    OctreeCell *m_at_E,*m_at_W,*m_at_N,*m_at_S,*m_at_U,*m_at_D;//neighbour
+    WESNDU
+      5
+      |  3
+ 0 _ _|/_ _ 1
+     /|
+    / |
+   2  4
+    OctreeCell *m_at_W,*m_at_E,*m_at_S,*m_at_N,*m_at_D,*m_at_U;//neighbour
+    We try to find a neighbour with the same size. If there is not, take a bigger cell.
+    Every time a cell is cut, try to find neighbour with the good size on both sides.
+
 
   Sons order :
     OctreeCell *m_son_WSD,*m_son_ESD,*m_son_WND,*m_son_END;
@@ -41,6 +50,7 @@ public:
     long get_nbr_vox(){return nbr_vox;}
     long count_rendering_cells();
     long count_terminal_cells();
+    bool update_covered();//if all neighs are full
 protected:
     OctreeCell * m_parent;
     unsigned short m_x_min,m_y_min,m_z_min,m_size;
@@ -51,6 +61,8 @@ protected:
     //for sons, use an other class? (to have sons only for not final cells?
     OctreeCell *m_sons[8];
     static long nbr_vox;
+
+    static short fast_neigh_matrix[8][6][2];//to compute quickly neigh
 };
 
 #endif // OCTREECELL_H

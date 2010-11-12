@@ -1,6 +1,7 @@
 #ifndef VOXOBJ_H
 #define VOXOBJ_H
 
+#include <string>
 #include "octreecell.h"
 
 /**
@@ -25,8 +26,8 @@ public:
     ~VoxObj();
     //load form voxlap file
     //bool load_from_KV6 (char *filnam);///load Ken Silverman's Voxlap5 KV6 format
-    bool load_from_VOX (char *filnam);///load Ken Silverman's Voxlap5 KV6 format
-    bool load_from_VOX_octree (char *filnam);///load Ken Silverman's Voxlap5 KV6 format
+    bool load_from_VOX (std::string filnam);///load Ken Silverman's Voxlap5 KV6 format
+    bool load_from_VOX_octree (std::string filnam);///load Ken Silverman's Voxlap5 KV6 format
 
     //temp:
     unsigned char *voxels;
