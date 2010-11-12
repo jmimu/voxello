@@ -14,7 +14,7 @@ VoxObj::VoxObj() :
 {
     //DESKLAMP  dopefish  duke  globe  pawn  strongbad
     //load_from_VOX("data/duke.vox");
-    load_from_VOX_octree("data/duke.vox");
+    load_from_VOX_octree("data/dopefish.vox");
 
    /*
     xsiz=4;
@@ -164,10 +164,10 @@ void VoxObj::draw_slow(double angleX,double angleY,double angleZ)
     glMatrixMode( GL_MODELVIEW );
     glLoadIdentity( );
 
-    gluLookAt(0,-zsiz,0,0,0,0,0,0,-1);//z is down, look in y direction
+    gluLookAt(0,-zsiz,0,0,0,0,0,0,1);//z is down, look in y direction
 
-    glRotated(angleZ,0,0,1);
     glRotated(angleY,0,1,0);
+    glRotated(angleZ,0,0,1);
     glRotated(angleX,1,0,0);
 
     glBegin(GL_QUADS);
@@ -192,7 +192,7 @@ void VoxObj::draw_slow(double angleX,double angleY,double angleZ)
 }
 
 
-void VoxObj::draw_slow_octree(double angleX,double angleY,double angleZ)
+void VoxObj::draw_slow_octree(double angleX,double angleY,double angleZ,short sub_rendering_scale)
 {
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
@@ -203,16 +203,21 @@ void VoxObj::draw_slow_octree(double angleX,double angleY,double angleZ)
     glMatrixMode( GL_MODELVIEW );
     glLoadIdentity( );
 
-    gluLookAt(0,-zsiz,0,0,0,0,0,0,-1);//z is down, look in y direction
+    gluLookAt(0,-zsiz,0,0,0,0,0,0,1);//z is down, look in y direction
 
-    glRotated(angleZ,0,0,1);
     glRotated(angleY,0,1,0);
+    glRotated(angleZ,0,0,1);
     glRotated(angleX,1,0,0);
+    //std::cout<<"angles: "<<angleX<<" "<<angleY<<" "<<angleZ<<std::endl;
+    //glRotated((rand()%100)/20.0,0,0,1);
+    //glRotated(1,0,0,1);
 
     glBegin(GL_QUADS);
 
-
-    m_octree->ogl_render(m_pos_X,m_pos_Y,m_pos_Z,xsiz>>1, ysiz>>1, zsiz>>1,1);
+    if (sub_rendering_scale<0) sub_rendering_scale=0;
+    if (sub_rendering_scale>10) sub_rendering_scale=10;
+    long sub_rendering_size=1<<sub_rendering_scale;
+    m_octree->ogl_render(m_pos_X,m_pos_Y,m_pos_Z,xsiz>>1, ysiz>>1, zsiz>>1,sub_rendering_size);
 
 
     glEnd();

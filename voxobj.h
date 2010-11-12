@@ -32,7 +32,7 @@ public:
     unsigned char *voxels;
     unsigned char palette[256][3];
     void draw_slow(double angleX,double angleY,double angleZ);
-    void draw_slow_octree(double angleX,double angleY,double angleZ);
+    void draw_slow_octree(double angleX,double angleY,double angleZ,short sub_rendering_scale);
 
 protected:
     double m_pos_X,m_pos_Y,m_pos_Z;

@@ -41,10 +41,11 @@ int main(int argc, char *argv[])
 
     VoxObj obj1;
 
-    double angleZ = 3.14;
+    double angleZ = 180;
     double angleY = 0;
-    double angleX = 0;
+    double angleX = 70;
 
+    short sub_rendering_scale=0;
 
     SDL_Event event;
 
@@ -55,7 +56,7 @@ int main(int argc, char *argv[])
 
     glMatrixMode( GL_PROJECTION );
     glLoadIdentity();
-    gluPerspective(70,(double)RES_X/RES_Y,1,1000);
+    gluPerspective(70,(double)RES_X/RES_Y,10,1000);
 
     glEnable(GL_DEPTH_TEST);
 
@@ -85,6 +86,25 @@ int main(int argc, char *argv[])
                 run = !run;
                 break;
 
+                case SDL_MOUSEMOTION:
+                angleZ -= event.motion.xrel*0.5;
+                angleX += event.motion.yrel*0.5;
+                break;
+
+                case SDL_MOUSEBUTTONDOWN:
+                if ((event.button.button == SDL_BUTTON_WHEELUP)&&(event.button.type == SDL_MOUSEBUTTONDOWN)) //coup de molette vers le haut
+                {
+                    sub_rendering_scale--;
+                    if (sub_rendering_scale<0) sub_rendering_scale=0;
+                }
+                if ((event.button.button == SDL_BUTTON_WHEELDOWN)&&(event.button.type == SDL_MOUSEBUTTONDOWN)) //coup de molette vers le bas
+                {
+                    sub_rendering_scale++;
+                    if (sub_rendering_scale>10) sub_rendering_scale=10;
+                }
+
+                break;
+
             }
         }
 
@@ -99,12 +119,12 @@ int main(int argc, char *argv[])
         ellapsed_time = current_time - last_time;
         last_time = current_time;
 
-        angleZ += 0.02 * ellapsed_time;
+        //angleZ += 0.02 * ellapsed_time;
         //angleY += 0.023 * ellapsed_time;
         //angleX += 0.027 * ellapsed_time;
 
         //obj1.draw_slow(angleX,angleY,angleZ);
-        obj1.draw_slow_octree(angleX,angleY,angleZ);
+        obj1.draw_slow_octree(angleX,angleY,angleZ,sub_rendering_scale);
 
         ellapsed_time = SDL_GetTicks() - start_time;
         if (ellapsed_time < 20)
