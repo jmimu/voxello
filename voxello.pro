@@ -17,15 +17,15 @@ TEMPLATE = app
 
 SOURCES += main.cpp \
     voxobj.cpp \
-    octreecell.cpp \
     kv6format.cpp \
-    ogldraw.cpp
+    ogldraw.cpp \
+    compress_tools.cpp
 
 HEADERS += \
     voxobj.h \
-    octreecell.h \
     kv6format.h \
-    ogldraw.h
+    ogldraw.h \
+    compress_tools.h
 
 
 LIBS += -lSDL -lGL -lGLU

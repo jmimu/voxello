@@ -31,6 +31,13 @@ Octree:     9242 rendered cells
 Memory:   125856 bytes for voxels
 Memory:  1414284 bytes for octree
 May save: 521056 bytes by changing terminal cells
+
+Duke :
+draw_slow : 60 fps
+draw_slow_octree : 110 fps
+draw_slow_octree_neigh_bof : 150 fps
+draw_slow_RLE : 130 fps => 100 to 170?
+
  */
 
 
@@ -44,8 +51,6 @@ int main(int argc, char *argv[])
     double angleZ = 180*2;
     double angleY = 0;
     double angleX = 70*2;
-
-    short sub_rendering_scale=0;
 
     SDL_Event event;
 
@@ -92,7 +97,7 @@ int main(int argc, char *argv[])
                 break;
 
                 case SDL_MOUSEBUTTONDOWN:
-                if ((event.button.button == SDL_BUTTON_WHEELUP)&&(event.button.type == SDL_MOUSEBUTTONDOWN)) //coup de molette vers le haut
+                /*if ((event.button.button == SDL_BUTTON_WHEELUP)&&(event.button.type == SDL_MOUSEBUTTONDOWN)) //coup de molette vers le haut
                 {
                     sub_rendering_scale--;
                     if (sub_rendering_scale<0) sub_rendering_scale=0;
@@ -101,8 +106,7 @@ int main(int argc, char *argv[])
                 {
                     sub_rendering_scale++;
                     if (sub_rendering_scale>10) sub_rendering_scale=10;
-                }
-
+                }*/
                 break;
 
             }
@@ -123,8 +127,7 @@ int main(int argc, char *argv[])
         //angleY += 0.023 * ellapsed_time;
         //angleX += 0.027 * ellapsed_time;
 
-        //obj1.draw_slow(angleX,angleY,angleZ);
-        obj1.draw_slow_octree(angleX,angleY,angleZ,sub_rendering_scale);
+        obj1.draw_slow_RLE(angleX,angleY,angleZ);
 
         ellapsed_time = SDL_GetTicks() - start_time;
         if (ellapsed_time < 20)

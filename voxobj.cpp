@@ -7,67 +7,22 @@
 
 #include "ogldraw.h"
 
+//#define DRAW_EMPTY 10
 
 VoxObj::VoxObj() :
         voxels(0),
-        m_pos_X(0.0),m_pos_Y(0.0),m_pos_Z(0.0),xsiz(0), ysiz(0), zsiz(0),
-        m_octree(0)
+        m_pos_X(0.0),m_pos_Y(0.0),m_pos_Z(0.0),xsiz(0), ysiz(0), zsiz(0)
 {
-    //DESKLAMP  dopefish  duke  globe  pawn  strongbad
-    //load_from_VOX("data/duke.vox");
-    load_from_VOX_octree("data/strongbad.vox");
-
-/*
-    xsiz=4;
-    ysiz=4;
-    zsiz=4;
-    m_octree=new OctreeCell(0,0,0,0,4);
-    m_octree->add_voxel(0,0,0,200,50,50,255);
-    m_octree->add_voxel(0,1,1,200,50,50,255);
-    m_octree->add_voxel(1,0,1,200,50,50,255);
-    m_octree->add_voxel(1,1,2,200,50,50,255);
-    m_octree->add_voxel(2,1,1,200,250,50,255);
-    m_octree->add_voxel(1,2,1,200,50,50,255);
-    m_octree->add_voxel(1,1,1,200,250,50,255);*/
-    //m_octree->del_voxel(0,0,0);
-    //m_octree->add_voxel(1,1,0,200,250,50,255);
-    //m_octree->add_voxel(3,3,3,200,250,50,255);
-
-/*
-    xsiz=8;
-    ysiz=8;
-    zsiz=8;
-    m_octree=new OctreeCell(0,0,0,0,8);
-    for (int x=1;x<5;x++)
-        for (int y=1;y<5;y++)
-            for (int z=1;z<5;z++)
-            {
-                m_octree->add_voxel(x,y,z,200,0,0,255);
-                //m_octree->add_voxel(1+x,1+y,1+z,rand()%255,rand()%255,rand()%255,255);
-            }
-*/
-
-    //need to call m_octree->count_rendering_cells() to update parents colors and covered status
-    std::cout<<"Octree: "<<m_octree->get_nbr_vox()<<" cells"<<std::endl;
-    std::cout<<"Octree: "<<m_octree->count_terminal_cells()<<" terminal cells"<<std::endl;
-    std::cout<<"Octree: "<<m_octree->count_rendering_cells()<<" rendered cells"<<std::endl;
-
-    std::cout<<"Memory: "<<xsiz*ysiz*zsiz<<" bytes for voxels"<<std::endl;
-    std::cout<<"Memory: "<<m_octree->get_nbr_vox()*sizeof(OctreeCell)<<" bytes for octree"<<std::endl;
-
-    std::cout<<"May save: "<<m_octree->count_terminal_cells()*8*sizeof(long)<<" bytes by changing terminal cells"<<std::endl;
-
+    //DESKLAMP  dopefish  duke  globe  pawn  strongbad CHAIR1
+    load_from_VOX("data/duke.vox");
 
     std::cout<<"VoxObj created."<<std::endl;
-    m_octree->count_rendering_cells();
 
 }
 
 
 VoxObj::~VoxObj()
 {
-    if (m_octree)
-        delete m_octree;
     if (voxels)
         free(voxels);
 }
@@ -85,39 +40,7 @@ bool VoxObj::load_from_VOX (std::string filnam)
     fread(&ysiz,4,1,fil); //size
     fread(&zsiz,4,1,fil); //size
 
-    voxels = (unsigned char *)malloc(xsiz*ysiz*zsiz);
-
-    fread(voxels,xsiz*ysiz*zsiz,1,fil); //The 3-D array itself!
-
-    fread(palette,768,1,fil);          //VGA palette (values range from 0-63)
-    fclose(fil);
-    //colour 255 is for empty space
-
-    //change palette form 18 to 24 bits
-    for (int i=0;i<255;i++)
-    {
-        palette[i][0]=palette[i][0]<<2;
-        palette[i][1]=palette[i][1]<<2;
-        palette[i][2]=palette[i][2]<<2;
-    }
-
-    std::cout<<filnam<<": got "<<xsiz<<"*"<<ysiz<<"*"<<zsiz<<"voxels"<<std::endl;
-    return true;
-}
-
-
-bool VoxObj::load_from_VOX_octree (std::string filnam)
-{
-    FILE *fil;
-    //unsigned char *voxels;
-
-
-    fil = fopen(filnam.c_str(),"rb"); if (!fil) return(false);
-    fread(&xsiz,4,1,fil); //size
-    fread(&ysiz,4,1,fil); //size
-    fread(&zsiz,4,1,fil); //size
-
-    voxels = (unsigned char *)malloc(xsiz*ysiz*zsiz);
+    voxels = (unsigned char *)malloc(xsiz*ysiz*zsiz*sizeof(unsigned char));
 
     fread(voxels,xsiz*ysiz*zsiz,1,fil); //The 3-D array itself!
 
@@ -135,26 +58,11 @@ bool VoxObj::load_from_VOX_octree (std::string filnam)
     //just for tests: change black (inside) to yellow
     palette[0][0]=200;    palette[0][1]=200;    palette[0][2]=00;
 
+
     std::cout<<filnam<<": got "<<xsiz<<"*"<<ysiz<<"*"<<zsiz<<"voxels"<<std::endl;
-
-    //size of octree : 2^x > max size
-    unsigned short size=std::max(xsiz,ysiz);
-    size=std::max(size,zsiz);
-
-    long test_size=1;
-    for (long exp=2;exp<10;exp++)
-    {
-        test_size=test_size<<1;
-        if (test_size>size)
-        {
-            size=test_size;
-            break;
-        }
-    }
 
     long nbr_vox=0;
 
-    m_octree=new OctreeCell(0,0,0,0,size);
     unsigned char v;
     for (long x=0;x<xsiz;x++)
         for (long y=0;y<ysiz;y++)
@@ -164,7 +72,6 @@ bool VoxObj::load_from_VOX_octree (std::string filnam)
                 if (v!=255)
                 {
                     //std::cout<<"Try to add voxel "<<x<<" "<<y<<" "<<z<<std::endl;
-                    m_octree->add_voxel(x,y,z,palette[v][0],palette[v][1],palette[v][2],255);
                     nbr_vox++;
                 }
                 //else
@@ -175,8 +82,36 @@ bool VoxObj::load_from_VOX_octree (std::string filnam)
 
     std::cout<<"Simple: "<<nbr_vox<<" rendered voxels"<<std::endl;
 
+    //create RLE object
+    obj = (Column_RLE*)malloc(xsiz*ysiz*sizeof(Column_RLE));
+    //now fill the column matrix
+    for (long x=0;x<xsiz;x++)
+        for (long y=0;y<ysiz;y++)
+        {
+            //create the voxel column
+            Vox * column;
+            column = (Vox *)malloc(zsiz*sizeof(Vox));
+            for (long z=0;z<zsiz;z++)
+            {
+                v=voxels[x*ysiz*zsiz+y*zsiz+z];
+                column[z].c=v;
+                column[z].f=0;
+            }
+            //then compress it
+            Vox_RLE * data_RLE;
+            unsigned short size_RLE=Compress_Tools::zip_RLE(column,zsiz,&data_RLE);
+            free(column);
+            obj[x+y*xsiz].data=data_RLE;
+            obj[x+y*xsiz].nbr_data=size_RLE;
+        }
+
+    //TODO: update vox flags
+
     return true;
 }
+
+
+
 
 void VoxObj::draw_slow(double angleX,double angleY,double angleZ)
 {
@@ -206,6 +141,10 @@ void VoxObj::draw_slow(double angleX,double angleY,double angleZ)
                 v=voxels[x*ysiz*zsiz+y*zsiz+z];
                 if (v!=255)
                     ogldraw::cube(x-xsiz/2,y-ysiz/2,-z+zsiz/2,1,palette[v][0],palette[v][1],palette[v][2]);
+#ifdef DRAW_EMPTY
+                else
+                    ogldraw::cube(x-xsiz/2,y-ysiz/2,-z+zsiz/2,1,palette[v][0],palette[v][1],palette[v][2],DRAW_EMPTY);
+#endif
             }
 
 
@@ -217,7 +156,7 @@ void VoxObj::draw_slow(double angleX,double angleY,double angleZ)
 }
 
 
-void VoxObj::draw_slow_octree(double angleX,double angleY,double angleZ,short sub_rendering_scale)
+void VoxObj::draw_slow_RLE(double angleX,double angleY,double angleZ)
 {
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
@@ -228,27 +167,41 @@ void VoxObj::draw_slow_octree(double angleX,double angleY,double angleZ,short su
     glMatrixMode( GL_MODELVIEW );
     glLoadIdentity( );
 
-    gluLookAt(0,-zsiz-5,0,0,0,0,0,0,1);//z is down, look in y direction
+    gluLookAt(0,-zsiz,0,0,0,0,0,0,1);//z is down, look in y direction
 
     glRotated(angleY,0,1,0);
     glRotated(angleZ,0,0,1);
     glRotated(angleX,1,0,0);
-    //std::cout<<"angles: "<<angleX<<" "<<angleY<<" "<<angleZ<<std::endl;
-    //glRotated((rand()%100)/20.0,0,0,1);
-    //glRotated(1,0,0,1);
 
     glBegin(GL_QUADS);
 
-    if (sub_rendering_scale<0) sub_rendering_scale=0;
-    if (sub_rendering_scale>10) sub_rendering_scale=10;
-    long sub_rendering_size=1<<sub_rendering_scale;
-    m_octree->ogl_render(m_pos_X,m_pos_Y,m_pos_Z,xsiz>>1, ysiz>>1, zsiz>>1,sub_rendering_size);
+
+    unsigned char v;//value = color of voxel
+    unsigned short n;//number of same voxels in a raw = rectangle height
+    for (long x=0;x<xsiz;x++)
+        for (long y=0;y<ysiz;y++)
+        {
+            long z=0;
+            for (long i=0;i<obj[x+y*xsiz].nbr_data;i++)
+            {
+                v=obj[x+y*xsiz].data[i].vox.c;
+                n=obj[x+y*xsiz].data[i].nbr;
+                if (v!=255)
+                    ogldraw::rect(x-xsiz/2,y-ysiz/2,z-zsiz/2,n,palette[v][0],palette[v][1],palette[v][2]);
+#ifdef DRAW_EMPTY
+                else
+                    ogldraw::rect(x-xsiz/2,y-ysiz/2,z-zsiz/2,n,palette[v][0],palette[v][1],palette[v][2],DRAW_EMPTY);
+#endif
+                z+=n;
+            }
+        }
 
 
     glEnd();
 
     glFlush();
     SDL_GL_SwapBuffers();
+
 }
 
 

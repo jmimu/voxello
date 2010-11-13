@@ -1,0 +1,3 @@
+Plus d'octree : permet de gagner des voxels uniquement si la surface est unie et l'intérieur a la même couleur.
+Dans les exemples de voxlap ce n'est pas le cas.
+=> on essaie de faire une compression RLE en verticale, avec calcul de visibilité très simple sur une marice régulière.
