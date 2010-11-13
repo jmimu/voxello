@@ -37,7 +37,7 @@ draw_slow : 60 fps
 draw_slow_octree : 110 fps
 draw_slow_octree_neigh_bof : 150 fps
 draw_slow_RLE : 130 fps => 100 to 170?
-
+draw_slow_RLE_faces : 400 fps
  */
 
 

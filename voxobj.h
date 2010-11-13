@@ -30,6 +30,9 @@ public:
 
     Column_RLE * obj;//2D array of RLE cols
 
+    //for each column, compare to 4 close columns
+    void update_flags();
+
     //temp:
     unsigned char *voxels;
     unsigned char palette[256][3];

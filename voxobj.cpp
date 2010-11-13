@@ -17,7 +17,7 @@ VoxObj::VoxObj() :
     load_from_VOX("data/duke.vox");
 
     std::cout<<"VoxObj created."<<std::endl;
-
+    std::cout<<"Vox_RLE size: "<<sizeof(Vox_RLE)<<std::endl;
 }
 
 
@@ -82,6 +82,8 @@ bool VoxObj::load_from_VOX (std::string filnam)
 
     std::cout<<"Simple: "<<nbr_vox<<" rendered voxels"<<std::endl;
 
+    long total_voxRLE=0;
+
     //create RLE object
     obj = (Column_RLE*)malloc(xsiz*ysiz*sizeof(Column_RLE));
     //now fill the column matrix
@@ -103,13 +105,127 @@ bool VoxObj::load_from_VOX (std::string filnam)
             free(column);
             obj[x+y*xsiz].data=data_RLE;
             obj[x+y*xsiz].nbr_data=size_RLE;
+            total_voxRLE+=size_RLE;
         }
 
+    std::cout<<"Number of Vox_RLE: "<<total_voxRLE<<std::endl;
+
     //TODO: update vox flags
+    update_flags();
 
     return true;
 }
 
+
+void VoxObj::update_flags()
+{
+    std::cout<<"Begin update flags\n";
+
+    for (long x=0;x<xsiz;x++)
+        for (long y=0;y<ysiz;y++)
+        { //TODO: optimize not unzipping all every time?
+            std::cout<<"   "<<x<<" "<<y<<" ";
+
+            Vox * column;
+            Vox * west_column=0;
+            Vox * east_column=0;
+            Vox * south_column=0;
+            Vox * north_column=0;
+
+            //unzip the 4 columns
+            Compress_Tools::unzip_RLE(obj[x+y*xsiz].data,obj[x+y*xsiz].nbr_data,&column);
+            if (x>0)
+                Compress_Tools::unzip_RLE(obj[x-1+y*xsiz].data,obj[x-1+y*xsiz].nbr_data,&west_column);
+            if (x<xsiz-1)
+                Compress_Tools::unzip_RLE(obj[x+1+y*xsiz].data,obj[x+1+y*xsiz].nbr_data,&east_column);
+            if (y>0)
+                Compress_Tools::unzip_RLE(obj[x+(y-1)*xsiz].data,obj[x+(y-1)*xsiz].nbr_data,&south_column);
+            if (y<ysiz-1)
+                Compress_Tools::unzip_RLE(obj[x+(y+1)*xsiz].data,obj[x+(y+1)*xsiz].nbr_data,&north_column);
+
+            for (long z=0;z<zsiz;z++)
+            {
+                Vox * vox=&column[z];
+                Vox * w_vox=0;
+                Vox * e_vox=0;
+                Vox * s_vox=0;
+                Vox * n_vox=0;
+                Vox * d_vox=0;
+                Vox * u_vox=0;
+
+                if(west_column)
+                    w_vox=&west_column[z];
+                if(east_column)
+                    e_vox=&east_column[z];
+                if(south_column)
+                    s_vox=&south_column[z];
+                if(north_column)
+                    n_vox=&north_column[z];
+
+                if (z>0)
+                    d_vox=&column[z-1];
+                if (z<zsiz-1)
+                    u_vox=&column[z+1];
+
+                //we have every neigh; just have to check
+                unsigned short f=0;
+                if ((w_vox) && (w_vox->c!=255))
+                    f|=FACE_W_COVERED;
+                if ((e_vox) && (e_vox->c!=255))
+                    f|=FACE_E_COVERED;
+                if ((s_vox) && (s_vox->c!=255))
+                    f|=FACE_S_COVERED;
+                if ((n_vox) && (n_vox->c!=255))
+                    f|=FACE_N_COVERED;
+                if ((d_vox) && (d_vox->c!=255))
+                    f|=FACE_D_COVERED;
+                if ((u_vox) && (u_vox->c!=255))
+                    f|=FACE_U_COVERED;
+
+                if (f&ALL_FACES_COVERED)
+                    f|=IS_COVERED;
+
+                column[z].f=f;
+            }
+            free(obj[x+y*xsiz].data);//delete previous RLE column
+            //compress the column
+            obj[x+y*xsiz].nbr_data=Compress_Tools::zip_RLE(column,zsiz,&(obj[x+y*xsiz].data));
+
+            if (east_column)
+                std::cout<<"east_column ";
+            if (west_column)
+                std::cout<<"west_column ";
+            if (south_column)
+                std::cout<<"south_column ";
+            if (north_column)
+                std::cout<<"north_column ";
+            std::cout<<std::endl;
+
+/*            if ((x==41)&&(y>=44))
+            {
+                std::cout<<"boum ?"<<std::endl;
+
+                std::cout<<"Compress ";
+                for (unsigned short z=0;z<zsiz;z++)
+                    std::cout<<(int)north_column[z].c<<" ";
+                std::cout<<"\ninto: ";
+                for (unsigned short n=0;n<obj[x+(y+1)*xsiz].nbr_data;n++)
+                    std::cout<<(int)obj[x+(y+1)*xsiz].data->nbr<<"*"<<(int)obj[x+(y+1)*xsiz].data->vox.c<<" ";
+                std::cout<<"\n"<<std::endl;
+            }
+*/
+            //delete all that
+            free(column);
+            if (east_column)
+                free(east_column);
+            if (west_column)
+                free(west_column);
+            if (south_column)
+                free(south_column);
+            if (north_column)
+                free(north_column);
+        }
+}
 
 
 
@@ -177,6 +293,7 @@ void VoxObj::draw_slow_RLE(double angleX,double angleY,double angleZ)
 
 
     unsigned char v;//value = color of voxel
+    unsigned char f;//value = flags of voxel
     unsigned short n;//number of same voxels in a raw = rectangle height
     for (long x=0;x<xsiz;x++)
         for (long y=0;y<ysiz;y++)
@@ -185,9 +302,10 @@ void VoxObj::draw_slow_RLE(double angleX,double angleY,double angleZ)
             for (long i=0;i<obj[x+y*xsiz].nbr_data;i++)
             {
                 v=obj[x+y*xsiz].data[i].vox.c;
+                f=obj[x+y*xsiz].data[i].vox.f;
                 n=obj[x+y*xsiz].data[i].nbr;
                 if (v!=255)
-                    ogldraw::rect(x-xsiz/2,y-ysiz/2,z-zsiz/2,n,palette[v][0],palette[v][1],palette[v][2]);
+                    ogldraw::rect_flag(x-xsiz/2,y-ysiz/2,z-zsiz/2,n,f,palette[v][0],palette[v][1],palette[v][2]);
 #ifdef DRAW_EMPTY
                 else
                     ogldraw::rect(x-xsiz/2,y-ysiz/2,z-zsiz/2,n,palette[v][0],palette[v][1],palette[v][2],DRAW_EMPTY);

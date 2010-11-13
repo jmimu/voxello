@@ -5,10 +5,15 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 
+#include "compress_tools.h"
+
 namespace ogldraw
 {
     void cube(double x,double y,double z,unsigned short size,unsigned char r,unsigned char g,unsigned char b,unsigned char a=255);
     void rect(double x,double y,double z,unsigned short zsize,unsigned char r,unsigned char g,unsigned char b,unsigned char a=255);
+
+    void rect_flag(double x,double y,double z,unsigned short zsize,unsigned char f,unsigned char r,unsigned char g,unsigned char b,unsigned char a=255);
+
 }
 
 #endif // OGLDRAW_H
