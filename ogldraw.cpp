@@ -2,6 +2,40 @@
 
 #include <iostream>
 
+void ogldraw::init_OGL()
+{
+    SDL_Init(SDL_INIT_VIDEO);
+    atexit(SDL_Quit);
+    SDL_WM_SetCaption("SDL GL Application", NULL);
+    SDL_SetVideoMode(RES_X, RES_Y, 32, SDL_OPENGL);
+
+    glMatrixMode( GL_PROJECTION );
+    glLoadIdentity();
+    gluPerspective(70,(double)RES_X/RES_Y,1,1000);
+
+    glEnable(GL_DEPTH_TEST);
+}
+
+void ogldraw::begin_draw()
+{
+
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
+    //to enable transparency
+    glEnable (GL_BLEND);
+    glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glMatrixMode( GL_MODELVIEW );
+
+}
+
+void ogldraw::end_draw()
+{
+    glFlush();
+    SDL_GL_SwapBuffers();
+}
+
+
 //TODO: compute which facse are oriented to the camera, to hide the 3 others
 void ogldraw::cube(double x,double y,double z,unsigned short size,unsigned char r,unsigned char g,unsigned char b,unsigned char a)
 {

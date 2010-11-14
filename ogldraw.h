@@ -7,8 +7,17 @@
 
 #include "compress_tools.h"
 
+
+#define RES_X 640
+#define RES_Y 480
+
+
 namespace ogldraw
 {
+    void init_OGL();
+    void begin_draw();
+    void end_draw();
+
     void cube(double x,double y,double z,unsigned short size,unsigned char r,unsigned char g,unsigned char b,unsigned char a=255);
     void rect(double x,double y,double z,unsigned short zsize,unsigned char r,unsigned char g,unsigned char b,unsigned char a=255);
 

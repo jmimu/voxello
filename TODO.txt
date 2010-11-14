@@ -1,0 +1,4 @@
+TODO:
+* collision tests: one transform for each object, voxel perfect ?
+* load other formats
+

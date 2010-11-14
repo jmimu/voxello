@@ -29,3 +29,6 @@ HEADERS += \
 
 
 LIBS += -lSDL -lGL -lGLU
+
+OTHER_FILES += \
+    TODO.txt

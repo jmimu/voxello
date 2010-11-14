@@ -9,12 +9,20 @@
 
 //#define DRAW_EMPTY 10
 
-VoxObj::VoxObj() :
+VoxObj::VoxObj(std::string filnam,int file_format) :
         voxels(0),
         m_pos_X(0.0),m_pos_Y(0.0),m_pos_Z(0.0),xsiz(0), ysiz(0), zsiz(0)
 {
     //DESKLAMP  dopefish  duke  globe  pawn  strongbad CHAIR1
-    load_from_VOX("data/duke.vox");
+    //load_from_VOX("data/duke.vox");
+    switch (file_format)
+    {
+    case VOX_FILE:
+        load_from_VOX(filnam);
+        break;
+    default:
+        std::cout<<"Bad file format: "<<filnam<<" format "<<file_format<<std::endl;
+    }
 
     std::cout<<"VoxObj created."<<std::endl;
     std::cout<<"Vox_RLE size: "<<sizeof(Vox_RLE)<<std::endl;
@@ -56,7 +64,7 @@ bool VoxObj::load_from_VOX (std::string filnam)
         palette[i][2]=palette[i][2]<<2;
     }
     //just for tests: change black (inside) to yellow
-    palette[0][0]=200;    palette[0][1]=200;    palette[0][2]=00;
+    //palette[0][0]=200;    palette[0][1]=200;    palette[0][2]=00;
 
 
     std::cout<<filnam<<": got "<<xsiz<<"*"<<ysiz<<"*"<<zsiz<<"voxels"<<std::endl;
@@ -119,12 +127,12 @@ bool VoxObj::load_from_VOX (std::string filnam)
 
 void VoxObj::update_flags()
 {
-    std::cout<<"Begin update flags\n";
+    //std::cout<<"Begin update flags\n";
 
     for (long x=0;x<xsiz;x++)
         for (long y=0;y<ysiz;y++)
         { //TODO: optimize not unzipping all every time?
-            std::cout<<"   "<<x<<" "<<y<<" ";
+            //std::cout<<"   "<<x<<" "<<y<<" ";
 
             Vox * column;
             Vox * west_column=0;
@@ -143,9 +151,9 @@ void VoxObj::update_flags()
             if (y<ysiz-1)
                 Compress_Tools::unzip_RLE(obj[x+(y+1)*xsiz].data,obj[x+(y+1)*xsiz].nbr_data,&north_column);
 
+            //can be optimized if not working on empty voxels
             for (long z=0;z<zsiz;z++)
             {
-                Vox * vox=&column[z];
                 Vox * w_vox=0;
                 Vox * e_vox=0;
                 Vox * s_vox=0;
@@ -182,16 +190,13 @@ void VoxObj::update_flags()
                 if ((u_vox) && (u_vox->c!=255))
                     f|=FACE_U_COVERED;
 
-                if (f&ALL_FACES_COVERED)
-                    f|=IS_COVERED;
-
                 column[z].f=f;
             }
             free(obj[x+y*xsiz].data);//delete previous RLE column
             //compress the column
             obj[x+y*xsiz].nbr_data=Compress_Tools::zip_RLE(column,zsiz,&(obj[x+y*xsiz].data));
 
-            if (east_column)
+/*            if (east_column)
                 std::cout<<"east_column ";
             if (west_column)
                 std::cout<<"west_column ";
@@ -199,21 +204,8 @@ void VoxObj::update_flags()
                 std::cout<<"south_column ";
             if (north_column)
                 std::cout<<"north_column ";
-            std::cout<<std::endl;
+            std::cout<<std::endl;*/
 
-/*            if ((x==41)&&(y>=44))
-            {
-                std::cout<<"boum ?"<<std::endl;
-
-                std::cout<<"Compress ";
-                for (unsigned short z=0;z<zsiz;z++)
-                    std::cout<<(int)north_column[z].c<<" ";
-                std::cout<<"\ninto: ";
-                for (unsigned short n=0;n<obj[x+(y+1)*xsiz].nbr_data;n++)
-                    std::cout<<(int)obj[x+(y+1)*xsiz].data->nbr<<"*"<<(int)obj[x+(y+1)*xsiz].data->vox.c<<" ";
-                std::cout<<"\n"<<std::endl;
-            }
-*/
             //delete all that
             free(column);
             if (east_column)
@@ -274,13 +266,6 @@ void VoxObj::draw_slow(double angleX,double angleY,double angleZ)
 
 void VoxObj::draw_slow_RLE(double angleX,double angleY,double angleZ)
 {
-    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-
-    //to enable transparency
-    glEnable (GL_BLEND);
-    glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    glMatrixMode( GL_MODELVIEW );
     glLoadIdentity( );
 
     gluLookAt(0,-zsiz,0,0,0,0,0,0,1);//z is down, look in y direction
@@ -291,10 +276,11 @@ void VoxObj::draw_slow_RLE(double angleX,double angleY,double angleZ)
 
     glBegin(GL_QUADS);
 
-
     unsigned char v;//value = color of voxel
     unsigned char f;//value = flags of voxel
     unsigned short n;//number of same voxels in a raw = rectangle height
+
+    //long nbr_rendered=0;
     for (long x=0;x<xsiz;x++)
         for (long y=0;y<ysiz;y++)
         {
@@ -304,8 +290,11 @@ void VoxObj::draw_slow_RLE(double angleX,double angleY,double angleZ)
                 v=obj[x+y*xsiz].data[i].vox.c;
                 f=obj[x+y*xsiz].data[i].vox.f;
                 n=obj[x+y*xsiz].data[i].nbr;
-                if (v!=255)
+                if ((v!=255)&&((f&ALL_FACES_COVERED)!=ALL_FACES_COVERED)) //simplify this test with an other flag?
+                {
                     ogldraw::rect_flag(x-xsiz/2,y-ysiz/2,z-zsiz/2,n,f,palette[v][0],palette[v][1],palette[v][2]);
+                    //nbr_rendered++;
+                }
 #ifdef DRAW_EMPTY
                 else
                     ogldraw::rect(x-xsiz/2,y-ysiz/2,z-zsiz/2,n,palette[v][0],palette[v][1],palette[v][2],DRAW_EMPTY);
@@ -316,9 +305,8 @@ void VoxObj::draw_slow_RLE(double angleX,double angleY,double angleZ)
 
 
     glEnd();
+    //std::cout<<"rendered: "<<nbr_rendered<<std::endl;
 
-    glFlush();
-    SDL_GL_SwapBuffers();
 
 }
 

@@ -5,9 +5,7 @@
 #include <iostream>
 
 #include "voxobj.h"
-
-#define RES_X 640
-#define RES_Y 480
+#include "ogldraw.h"
 
 /*
  data/pawn.vox
@@ -37,7 +35,8 @@ draw_slow : 60 fps
 draw_slow_octree : 110 fps
 draw_slow_octree_neigh_bof : 150 fps
 draw_slow_RLE : 130 fps => 100 to 170?
-draw_slow_RLE_faces : 400 fps
+draw_slow_RLE_faces : 424 fps
+draw_slow_RLE_faces_all : 420 fps
  */
 
 
@@ -46,7 +45,8 @@ int main(int argc, char *argv[])
     (void) argc;
     (void) argv;
 
-    VoxObj obj1;
+    //DESKLAMP  dopefish  duke  globe  pawn  strongbad CHAIR1
+    VoxObj obj1("data/strongbad.vox",VOX_FILE);
 
     double angleZ = 180*2;
     double angleY = 0;
@@ -54,16 +54,7 @@ int main(int argc, char *argv[])
 
     SDL_Event event;
 
-    SDL_Init(SDL_INIT_VIDEO);
-    atexit(SDL_Quit);
-    SDL_WM_SetCaption("SDL GL Application", NULL);
-    SDL_SetVideoMode(RES_X, RES_Y, 32, SDL_OPENGL);
-
-    glMatrixMode( GL_PROJECTION );
-    glLoadIdentity();
-    gluPerspective(70,(double)RES_X/RES_Y,1,1000);
-
-    glEnable(GL_DEPTH_TEST);
+    ogldraw::init_OGL();
 
     Uint32 last_time = SDL_GetTicks();
     Uint32 current_time,ellapsed_time;
@@ -127,7 +118,13 @@ int main(int argc, char *argv[])
         //angleY += 0.023 * ellapsed_time;
         //angleX += 0.027 * ellapsed_time;
 
+        ogldraw::begin_draw();
+
+        //obj1.draw_slow_RLE(0,0,0);
         obj1.draw_slow_RLE(angleX,angleY,angleZ);
+
+        ogldraw::end_draw();
+
 
         ellapsed_time = SDL_GetTicks() - start_time;
         if (ellapsed_time < 20)

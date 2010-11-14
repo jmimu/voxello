@@ -18,10 +18,14 @@
 
 #include "compress_tools.h"
 
+#define VOX_FILE 1
+#define KV6_FILE 2
+#define KVX_FILE 3
+
 class VoxObj
 {
 public:
-    VoxObj();
+    VoxObj(std::string filnam,int file_format);
     ~VoxObj();
     //load form voxlap file
     //bool load_from_KV6 (char *filnam);///load Ken Silverman's Voxlap5 KV6 format
