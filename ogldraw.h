@@ -15,7 +15,7 @@
 namespace ogldraw
 {
     void init_OGL();
-    void begin_draw();
+    void begin_draw(double angleX,double angleY,double angleZ);
     void end_draw();
 
     void cube(double x,double y,double z,unsigned short size,unsigned char r,unsigned char g,unsigned char b,unsigned char a=255);

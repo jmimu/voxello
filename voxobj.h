@@ -40,9 +40,9 @@ public:
     //temp:
     unsigned char *voxels;
     unsigned char palette[256][3];
-    void draw_slow(double angleX,double angleY,double angleZ);
-    void draw_slow_RLE(double angleX,double angleY,double angleZ);
-
+    void draw_slow();
+    void draw_slow_RLE();
+    void set_pos(double x,double y,double z){m_pos_X=x;m_pos_Y=y;m_pos_Z=z;}
 protected:
     double m_pos_X,m_pos_Y,m_pos_Z;
     unsigned short xsiz, ysiz, zsiz;

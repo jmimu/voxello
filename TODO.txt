@@ -1,4 +1,10 @@
 TODO:
 * collision tests: one transform for each object, voxel perfect ?
 * load other formats
+* animation: pre-computed neigh if objet is not modifiable
+
+Optimization:
+* compute where is each rendered voxel in camera's frame;
+    depending on the quarter and the objet orientation,
+    render only 3 faces.
 

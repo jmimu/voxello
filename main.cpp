@@ -3,6 +3,7 @@
 #include <GL/glu.h>
 
 #include <iostream>
+#include <math.h>
 
 #include "voxobj.h"
 #include "ogldraw.h"
@@ -46,7 +47,8 @@ int main(int argc, char *argv[])
     (void) argv;
 
     //DESKLAMP  dopefish  duke  globe  pawn  strongbad CHAIR1
-    VoxObj obj1("data/strongbad.vox",VOX_FILE);
+    VoxObj obj1("data/CHAIR1.vox",VOX_FILE);
+    VoxObj obj2("data/DESKLAMP.vox",VOX_FILE);
 
     double angleZ = 180*2;
     double angleY = 0;
@@ -64,6 +66,7 @@ int main(int argc, char *argv[])
     int fps=0;
 
     bool run=true;
+    double t=0.0;
     while (run)
     {
         fps++;
@@ -117,11 +120,14 @@ int main(int argc, char *argv[])
         //angleZ += 0.02 * ellapsed_time;
         //angleY += 0.023 * ellapsed_time;
         //angleX += 0.027 * ellapsed_time;
+	t+=0.05;
+        obj2.set_pos(4*cos(t),sin(t/5),5*sin(t));
 
-        ogldraw::begin_draw();
+        ogldraw::begin_draw(angleX,angleY,angleZ);
 
-        //obj1.draw_slow_RLE(0,0,0);
-        obj1.draw_slow_RLE(angleX,angleY,angleZ);
+        //obj1.draw_slow_RLE();
+        obj1.draw_slow_RLE();
+        obj2.draw_slow_RLE();
 
         ogldraw::end_draw();
 
@@ -136,3 +142,4 @@ int main(int argc, char *argv[])
 
     return 0;
 }
+

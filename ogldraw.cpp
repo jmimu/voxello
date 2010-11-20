@@ -16,7 +16,7 @@ void ogldraw::init_OGL()
     glEnable(GL_DEPTH_TEST);
 }
 
-void ogldraw::begin_draw()
+void ogldraw::begin_draw(double angleX,double angleY,double angleZ)
 {
 
     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
@@ -26,6 +26,14 @@ void ogldraw::begin_draw()
     glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     glMatrixMode( GL_MODELVIEW );
+
+    glLoadIdentity( );
+
+    gluLookAt(0,-50,0,0,0,0,0,0,1);//z is down, look in y direction
+
+    glRotated(angleY,0,1,0);
+    glRotated(angleZ,0,0,1);
+    glRotated(angleX,1,0,0);
 
 }
 

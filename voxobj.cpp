@@ -221,9 +221,9 @@ void VoxObj::update_flags()
 
 
 
-void VoxObj::draw_slow(double angleX,double angleY,double angleZ)
+void VoxObj::draw_slow()
 {
-    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+/*    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
     //to enable transparency
     glEnable (GL_BLEND);
@@ -237,7 +237,7 @@ void VoxObj::draw_slow(double angleX,double angleY,double angleZ)
     glRotated(angleY,0,1,0);
     glRotated(angleZ,0,0,1);
     glRotated(angleX,1,0,0);
-
+*/
     glBegin(GL_QUADS);
 
 
@@ -264,15 +264,15 @@ void VoxObj::draw_slow(double angleX,double angleY,double angleZ)
 }
 
 
-void VoxObj::draw_slow_RLE(double angleX,double angleY,double angleZ)
+void VoxObj::draw_slow_RLE()
 {
-    glLoadIdentity( );
+    //glLoadIdentity( );
 
-    gluLookAt(0,-zsiz,0,0,0,0,0,0,1);//z is down, look in y direction
+    //gluLookAt(0,-zsiz,0,0,0,0,0,0,1);//z is down, look in y direction
 
-    glRotated(angleY,0,1,0);
-    glRotated(angleZ,0,0,1);
-    glRotated(angleX,1,0,0);
+    //glRotated(angleY,0,1,0);
+    //glRotated(angleZ,0,0,1);
+    //glRotated(angleX,1,0,0);
 
     glBegin(GL_QUADS);
 
@@ -292,12 +292,12 @@ void VoxObj::draw_slow_RLE(double angleX,double angleY,double angleZ)
                 n=obj[x+y*xsiz].data[i].nbr;
                 if ((v!=255)&&((f&ALL_FACES_COVERED)!=ALL_FACES_COVERED)) //simplify this test with an other flag?
                 {
-                    ogldraw::rect_flag(x-xsiz/2,y-ysiz/2,z-zsiz/2,n,f,palette[v][0],palette[v][1],palette[v][2]);
+                    ogldraw::rect_flag(x-xsiz/2+m_pos_X,y-ysiz/2+m_pos_Y,z-zsiz/2+m_pos_Z,n,f,palette[v][0],palette[v][1],palette[v][2]);
                     //nbr_rendered++;
                 }
 #ifdef DRAW_EMPTY
                 else
-                    ogldraw::rect(x-xsiz/2,y-ysiz/2,z-zsiz/2,n,palette[v][0],palette[v][1],palette[v][2],DRAW_EMPTY);
+                    ogldraw::rect(x-xsiz/2+m_pos_X,y-ysiz/2+m_pos_Y,z-zsiz/2+m_pos_Z,n,palette[v][0],palette[v][1],palette[v][2],DRAW_EMPTY);
 #endif
                 z+=n;
             }
